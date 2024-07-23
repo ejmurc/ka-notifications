@@ -2,7 +2,7 @@
 const oldFetch = fetch;
 
 window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-	if (input instanceof URL || input instanceof String) {
+	if (input instanceof URL || typeof input === 'string' || input instanceof String) {
 		return oldFetch(input, init);
 	}
 
