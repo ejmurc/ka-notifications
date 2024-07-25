@@ -5,7 +5,11 @@ window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Pr
     !(input instanceof Request) ||
     !input.url?.startsWith('https://www.khanacademy.org/api/internal/graphql/getFeedbackRepliesPage')
   ) {
-    return _fetch(input, init);
+    try {
+      return await _fetch(input, init);
+    } catch (error) {
+      return new Response(null, { status: 404, statusText: typeof error === 'string' ? error : undefined });
+    }
   }
   const blob = await input.blob();
   const reader = new FileReader();
