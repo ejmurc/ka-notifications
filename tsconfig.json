@@ -4,10 +4,11 @@
   "compilerOptions": {
     "types": ["ace", "chrome-types"],
     "target": "ESNext",
-    "module": "CommonJS",
+    "module": "ESNext",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "strict": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "moduleResolution": "node"
   }
 }
