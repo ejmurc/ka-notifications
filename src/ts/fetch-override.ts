@@ -1,31 +1,38 @@
-// Fetch 100 comments at a time instead of 10
 const _fetch = window.fetch;
 window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const silent_fetch = async (): Promise<Response> => {
+    try {
+      return await _fetch(input, init);
+    } catch (error) {
+      return new Response(null, { status: 404 });
+    }
+  };
   if (
     !(input instanceof Request) ||
     !input.url?.startsWith('https://www.khanacademy.org/api/internal/graphql/getFeedbackRepliesPage')
   ) {
-    try {
-      return await _fetch(input, init);
-    } catch (error) {
-      return new Response(null, { status: 404, statusText: typeof error === 'string' ? error : undefined });
-    }
+    return silent_fetch();
   }
   const blob = await input.blob();
   const reader = new FileReader();
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     reader.onload = async () => {
-      const contents = reader.result as string;
-      const graphQLBody = JSON.parse(atob(contents.split(',')[1]));
-      graphQLBody.variables.limit = 100;
+      const contents = reader.result;
+      if (contents === null || contents instanceof ArrayBuffer) return resolve(silent_fetch());
+      const b64 = contents.split(',')?.[1];
+      if (b64 === undefined) return resolve(silent_fetch());
+      const decoded = atob(b64);
+      if (decoded === null) return resolve(silent_fetch());
+      const body = JSON.parse(decoded);
+      body.variables.limit = 100;
       const newInit: RequestInit = {
         ...input,
-        body: JSON.stringify(graphQLBody),
+        body: JSON.stringify(body),
       };
       const updatedRequest = new Request(input, newInit);
       resolve(_fetch(updatedRequest));
     };
-    reader.onerror = reject;
+    reader.onerror = () => resolve(silent_fetch());
     reader.readAsDataURL(blob);
   });
 };

@@ -28,10 +28,6 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
-      {
-        include: path.resolve(__dirname, 'node_modules/@bhavjit/khan-api'),
-        sideEffects: false,
-      },
     ],
   },
   output: {
@@ -39,7 +35,6 @@ module.exports = {
     path: path.resolve(__dirname, 'chrome'),
     filename: '[name].js',
     clean: true,
-    iife: false,
   },
   optimization: {
     minimizer: [new CssMinimizerPlugin(), new TerserPlugin()],

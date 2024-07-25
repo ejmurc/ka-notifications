@@ -18,7 +18,8 @@ function getTabId(qaExpandType: string | null): string {
 }
 
 // Project page
-if (isComputerScience && /^\d{16}$/.test(split[3].split('?')[0])) {
+const projectId = split[3]?.split('?')?.[0];
+if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
   const fetchOverrideScript = document.createElement('script');
   fetchOverrideScript.src = chrome.runtime.getURL('fetch-override.js');
   document.body.appendChild(fetchOverrideScript);

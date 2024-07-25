@@ -11,7 +11,7 @@ export async function khanApiMutation(
   authToken: string,
   variables: KhanAPIVariables = {},
 ): Promise<Response> {
-  let mutation: string | null = mutations[mutationName];
+  let mutation: string | null | undefined = mutations[mutationName];
   if (mutation === undefined) {
     mutation = await getLatestMutation(mutationName);
     if (mutation === null) {
@@ -22,7 +22,6 @@ export async function khanApiMutation(
   const requestURL = `https://www.khanacademy.org/api/internal/graphql/${mutationName}?/fastly/`;
   const requestInit: RequestInit = {
     method: 'POST',
-    // credentials: "same-origin",
     headers: {
       'X-KA-fkey': authToken,
       'Content-Type': 'application/json',
@@ -37,7 +36,7 @@ export async function khanApiMutation(
 }
 
 export async function khanApiQuery(queryName: string, variables: KhanAPIVariables = {}): Promise<Response> {
-  let hash: number | null = hashes[queryName];
+  let hash: number | null | undefined = hashes[queryName];
   if (hash === undefined) {
     hash = await getLatestQueryHash(queryName);
     if (hash === null) {

@@ -11,7 +11,8 @@ Object.defineProperty(window, 'ace', {
     requireClassName('ace_editor').then((elements) => {
       const editorElement = <HTMLDivElement>elements[0];
       const editor = _ace.edit(editorElement);
-      const programType = window.location.pathname.split('/')[3].toLowerCase();
+      const programType = window?.location?.pathname?.split('/')?.[3]?.toLowerCase();
+      if (programType === null) return;
       const cacheName = `__khanacademy_new_${programType}_cache__`;
       const cache = localStorage.getItem(cacheName);
       if (cache) editor.setValue(cache);

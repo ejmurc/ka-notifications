@@ -20,6 +20,7 @@
     "url": "https://github.com/eliasmurcray/ka-notifications/issues"
   },
   "homepage": "https://github.com/eliasmurcray/ka-notifications#readme",
+  "sideEffects": false,
   "devDependencies": {
     "@bhavjit/khan-api": "^0.7.2",
     "@eslint/js": "^9.7.0",
@@ -43,5 +44,6 @@
     "typescript-eslint": "^7.17.0",
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
-  }
+  },
+  "type": "module"
 }

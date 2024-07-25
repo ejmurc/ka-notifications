@@ -1,14 +1,21 @@
 {
-  "exclude": ["./chrome/", "./node_modules/", "./scripts/"],
-  "include": ["./src/ts/**.ts"],
   "compilerOptions": {
     "types": ["ace", "chrome-types"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
+    "target": "es6",
+    "module": "es6",
+    "moduleResolution": "node",
     "strict": true,
-    "strictNullChecks": true,
-    "moduleResolution": "node"
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "checkJs": true
   }
 }

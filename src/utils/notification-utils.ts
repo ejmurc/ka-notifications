@@ -1,11 +1,6 @@
 import { KhanAcademyNotification } from '../@types/notification';
-import { StringMap } from '../@types/common-types';
 import { getAuthToken, khanApiQuery, khanApiMutation } from './khan-api';
-import * as AVATAR_REQUIREMENTS_JSON from '../json/avatar-requirements.json';
-import * as AVATAR_SHORTNAMES_JSON from '../json/avatar-shortnames.json';
-
-const AVATAR_REQUIREMENTS: StringMap = AVATAR_REQUIREMENTS_JSON;
-const AVATAR_SHORTNAMES: StringMap = AVATAR_SHORTNAMES_JSON;
+import { avatarRequirements, avatarShortnames } from './avatar-maps';
 
 /**
  * Constructs notification string from input Khan Academy notification object
@@ -58,8 +53,8 @@ export function createNotificationString(notification: KhanAcademyNotification):
       }"><h3 class="notification-author-nickname">KA Avatars</h3><a class="hyperlink" href="https://www.khanacademy.org${url}" target="_blank">use avatar</a><span class="notification-date">${timeSince(
         new Date(date),
       )} ago</span></div><div class="notification-content">You unlocked <b>${
-        AVATAR_SHORTNAMES[notification.name]
-      }</b>! <i>${AVATAR_REQUIREMENTS[notification.name]}</i></div></li>`;
+        avatarShortnames[notification.name]
+      }</b>! <i>${avatarRequirements[notification.name]}</i></div></li>`;
     case 'GroupedBadgeNotification':
       return `<li class="notification ${
         brandNew ? 'new' : ''
@@ -211,8 +206,10 @@ function timeSince(date: Date): string {
 export function addReplyButtonEventListeners(): void {
   const replyButtons = document.getElementsByClassName('add-listeners') as HTMLCollectionOf<HTMLButtonElement>;
   for (let i = replyButtons.length; i--; ) {
-    replyButtons[i].onclick = handleReplyButtonClick;
-    replyButtons[i].className = 'notification-feedback-button';
+    const replyButton = replyButtons[i];
+    if (replyButton === undefined) continue;
+    replyButton.onclick = handleReplyButtonClick;
+    replyButton.className = 'notification-feedback-button';
   }
 }
 
@@ -296,8 +293,10 @@ async function sendMessage(event: MouseEvent): Promise<void> {
   try {
     // Grab parent feedback to get encrypted parent key
     // Why does KA encrypt a public key? Who knows.
+    const topicIdStr = url?.split('?')?.[0]?.split('/')?.pop();
+    if (topicIdStr === undefined) throw new Error(`Failed to parse topicId ${topicIdStr}`);
     const parentFeedbackResponse = await khanApiQuery('feedbackQuery', {
-      topicId: +url.split('?')[0].split('/')!.pop()!,
+      topicId: +topicIdStr,
       feedbackType: parentFeedbackType,
       currentSort: 2,
       qaExpandKey: params.get('qa_expand_key') as string,
