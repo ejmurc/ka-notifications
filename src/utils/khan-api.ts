@@ -1,5 +1,4 @@
 import { KhanAPIVariables } from '../@types/extension-types';
-import { getLatestMutation, getLatestQueryHash } from '@bhavjit/khan-api';
 import { StringMap } from '../@types/common-types';
 import { MutationHashes } from '../@types/extension-types';
 
@@ -60,4 +59,40 @@ export function getAuthToken(): Promise<string> {
       },
     );
   });
+}
+
+/**
+ * Stolen code from @bhavjit/khan-api:
+ * https://www.npmjs.com/package/@bhavjit/khan-api
+ * Tree shaking wasn't working, so putting the functions manually saves
+ * about 30kb from output size.
+ */
+const SAFELIST_URL = 'https://cdn.jsdelivr.net/gh/bhavjitChauhan/khan-api@safelist';
+
+function hashQuery(document: string) {
+  let hash = 5381,
+    i = document.length;
+
+  while (i) hash = (hash * 33) ^ document.charCodeAt(--i);
+  return hash >>> 0;
+}
+
+async function getLatestQuery(query: string) {
+  const response = await fetch(`${SAFELIST_URL}/query/${query}`);
+  if (response.status === 404) return null;
+  const text = await response.text();
+  return text;
+}
+
+async function getLatestQueryHash(query: string) {
+  const text = await getLatestQuery(query);
+  if (!text) return null;
+  return hashQuery(text);
+}
+
+async function getLatestMutation(mutation: string) {
+  const response = await fetch(`${SAFELIST_URL}/mutation/${mutation}`);
+  if (response.status === 404) return null;
+  const text = await response.text();
+  return text;
 }
