@@ -17,11 +17,14 @@ Object.defineProperty(window, 'ace', {
       const cache = localStorage.getItem(cacheName);
       if (cache) editor.setValue(cache);
       function saveProgram() {
-        const value = editor.getValue();
-        if (value.length === 0) return localStorage.removeItem(cacheName);
-        localStorage.setItem(cacheName, value);
+        const content = editor.getValue();
+        if (content.length === 0) {
+          localStorage.removeItem(cacheName);
+        } else {
+          localStorage.setItem(cacheName, content);
+        }
       }
-      editor.getSession().on('change', saveProgram);
+      editor.on('change', saveProgram);
       window.addEventListener('beforeunload', saveProgram);
     });
   },

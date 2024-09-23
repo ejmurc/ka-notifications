@@ -1,61 +1,61 @@
 import { KhanAPIVariables } from '../@types/extension-types';
 import { StringMap } from '../@types/common-types';
-import { MutationHashes } from '../@types/extension-types';
 
-const hashes: MutationHashes = {};
-const mutations: StringMap = {};
+const queries: StringMap = {};
 
-export async function khanApiMutation(
-  mutationName: string,
-  authToken: string,
+export async function khanApiFetch(
+  operationName: string,
+  authToken?: string,
   variables: KhanAPIVariables = {},
 ): Promise<Response> {
-  let mutation: string | null | undefined = mutations[mutationName];
-  if (mutation === undefined) {
-    mutation = await getLatestMutation(mutationName);
-    if (mutation === null) {
-      throw new Error(`Failed to retrieve mutation ${mutationName} from safelist.`);
+  let query: string | null = null;
+  if (queries[operationName] === undefined) {
+    query = (await getLatestQuery(operationName)) || (await getLatestMutation(operationName));
+    if (query === null) {
+      throw new Error(`Failed to retrieve query ${operationName} from safelist.`);
     }
-    mutations[mutationName] = mutation;
+    queries[operationName] = query;
   }
-  const requestURL = `https://www.khanacademy.org/api/internal/graphql/${mutationName}?/fastly/`;
+  const requestURL = `https://www.khanacademy.org/api/internal/graphql/${operationName}?/fastly/`;
   const requestInit: RequestInit = {
     method: 'POST',
     headers: {
-      'X-KA-fkey': authToken,
+      ...(authToken && { cookie: `KAAS=${authToken}` }),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      operationName: mutationName,
-      query: mutation,
+      operationName,
+      query,
       variables,
     }),
   };
-  return fetch(requestURL, requestInit);
-}
 
-export async function khanApiQuery(queryName: string, variables: KhanAPIVariables = {}): Promise<Response> {
-  let hash: number | null | undefined = hashes[queryName];
-  if (hash === undefined) {
-    hash = await getLatestQueryHash(queryName);
-    if (hash === null) {
-      throw new Error(`Failed to retrieve hash ${queryName} from safelist.`);
+  const response = await fetch(requestURL, requestInit);
+  if (response.status === 400) {
+    query = (await getLatestQuery(operationName)) || (await getLatestMutation(operationName));
+    if (query === null) {
+      throw new Error(`Failed to retrieve query ${operationName} from safelist.`);
     }
-    hashes[queryName] = hash;
+    queries[operationName] = query;
+    requestInit.body = JSON.stringify({
+      operationName,
+      query,
+      variables,
+    });
+    return fetch(requestURL, requestInit);
   }
-  const url = `https://www.khanacademy.org/api/internal/graphql/${queryName}?hash=${hash}&variables=${encodeURIComponent(JSON.stringify(variables))}&/fastly/`;
-  return fetch(url);
+  return response;
 }
 
-export function getAuthToken(): Promise<string> {
-  return new Promise<string>((resolve) => {
+export function getAuthToken(): Promise<string | undefined> {
+  return new Promise<string | undefined>((resolve) => {
     chrome.cookies.get(
       {
         url: 'https://www.khanacademy.org',
-        name: 'fkey',
+        name: 'KAAS',
       },
       (cookie) => {
-        resolve(cookie?.value ?? '');
+        resolve(cookie?.value);
       },
     );
   });
@@ -69,28 +69,14 @@ export function getAuthToken(): Promise<string> {
  */
 const SAFELIST_URL = 'https://cdn.jsdelivr.net/gh/bhavjitChauhan/khan-api@safelist';
 
-function hashQuery(document: string) {
-  let hash = 5381,
-    i = document.length;
-
-  while (i) hash = (hash * 33) ^ document.charCodeAt(--i);
-  return hash >>> 0;
-}
-
-async function getLatestQuery(query: string) {
+export async function getLatestQuery(query: string): Promise<string | null> {
   const response = await fetch(`${SAFELIST_URL}/query/${query}`);
   if (response.status === 404) return null;
   const text = await response.text();
   return text;
 }
 
-async function getLatestQueryHash(query: string) {
-  const text = await getLatestQuery(query);
-  if (!text) return null;
-  return hashQuery(text);
-}
-
-async function getLatestMutation(mutation: string) {
+export async function getLatestMutation(mutation: string): Promise<string | null> {
   const response = await fetch(`${SAFELIST_URL}/mutation/${mutation}`);
   if (response.status === 404) return null;
   const text = await response.text();

@@ -1,11 +1,15 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export default {
   mode: 'production',
   entry: {
     background: '/src/ts/background.ts',
@@ -14,8 +18,11 @@ module.exports = {
     'fetch-override': '/src/ts/fetch-override.ts',
     'ace-override': '/src/ts/ace-override.ts',
   },
-  resolve: {
-    extensions: ['.ts'],
+  optimization: {
+    minimize: true,
+    minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
+    usedExports: true,
+    sideEffects: false,
   },
   module: {
     rules: [
@@ -30,16 +37,14 @@ module.exports = {
       },
     ],
   },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
   output: {
     publicPath: '',
-    path: path.resolve(__dirname, 'chrome'),
+    path: resolve(__dirname, 'chrome'),
     filename: '[name].js',
     clean: true,
-  },
-  optimization: {
-    minimizer: [new CssMinimizerPlugin(), new TerserPlugin()],
-    usedExports: true,
-    sideEffects: false,
   },
   plugins: [
     new MiniCssExtractPlugin({
@@ -49,11 +54,9 @@ module.exports = {
       patterns: [
         {
           from: 'src/images',
-          to: '',
         },
         {
           from: 'src/manifest.json',
-          to: '',
         },
       ],
     }),
@@ -61,6 +64,10 @@ module.exports = {
       template: './src/html/popup.html',
       filename: 'popup.html',
       chunks: ['popup'],
+      minify: {
+        collapseWhitespace: true,
+        removeComments: true,
+      },
     }),
   ],
 };

@@ -1,5 +1,5 @@
 import { KhanAcademyNotification } from '../@types/notification';
-import { getAuthToken, khanApiQuery, khanApiMutation } from './khan-api';
+import { getAuthToken, khanApiFetch } from './khan-api';
 import { avatarRequirements, avatarShortnames } from './avatar-maps';
 
 /**
@@ -295,7 +295,7 @@ async function sendMessage(event: MouseEvent): Promise<void> {
     // Why does KA encrypt a public key? Who knows.
     const topicIdStr = url?.split('?')?.[0]?.split('/')?.pop();
     if (topicIdStr === undefined) throw new Error(`Failed to parse topicId ${topicIdStr}`);
-    const parentFeedbackResponse = await khanApiQuery('feedbackQuery', {
+    const parentFeedbackResponse = await khanApiFetch('feedbackQuery', undefined, {
       topicId: +topicIdStr,
       feedbackType: parentFeedbackType,
       currentSort: 2,
@@ -312,7 +312,7 @@ async function sendMessage(event: MouseEvent): Promise<void> {
     const parentKey =
       feedbacktype === 'QUESTION' && params.get('qa_expand_type') === 'answer' ? feedback.answers[0].key : feedback.key;
 
-    const childFeedbackResponse = await khanApiMutation('AddFeedbackToDiscussion', token, {
+    const childFeedbackResponse = await khanApiFetch('AddFeedbackToDiscussion', token, {
       parentKey,
       textContent: textarea.value,
       feedbackType: childFeedbackType,

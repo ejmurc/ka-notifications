@@ -3,11 +3,12 @@
   "version": "3",
   "description": "Khan Academy Notifications, no Firefox.",
   "scripts": {
-    "build": "webpack --mode=production",
-    "dev": "webpack -- --watch",
+    "dev": "webpack --config webpack.dev.mjs",
+    "watch": "webpack --config webpack.dev.mjs --watch",
+    "build": "webpack --config webpack.prod.mjs",
     "lint": "eslint src/ts/*.ts src/utils/*.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"src/manifest.json\" \"webpack.config.cjs\" \"scripts/**\"",
-    "release": "node scripts/release.cjs"
+    "format": "prettier --write \"src/**/*.ts\" \"src/manifest.json\" \"webpack.dev.mjs\" \"webpack.prod.mjs\" \"scripts/**\"",
+    "release": "node scripts/release.mjs"
   },
   "repository": "git+https://github.com/eliasmurcray/ka-notifications.git",
   "keywords": [
@@ -23,9 +24,7 @@
   "devDependencies": {
     "@eslint/js": "^9.7.0",
     "@types/ace": "^0.0.52",
-    "@types/eslint__js": "^8.42.3",
     "@types/html-webpack-plugin": "^3.2.6",
-    "@types/webpack-env": "^1.18.1",
     "archiver": "^5.3.1",
     "chrome-types": "^0.1.231",
     "copy-webpack-plugin": "^11.0.0",
@@ -36,6 +35,7 @@
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.6",
     "prettier": "^3.1.1",
+    "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.4.4",
     "typescript": "^5.5.4",

@@ -1,4 +1,4 @@
-import { getAuthToken, khanApiQuery, khanApiMutation } from '../utils/khan-api';
+import { getAuthToken, khanApiFetch } from '../utils/khan-api';
 import { createNotificationString, addReplyButtonEventListeners } from '../utils/notification-utils';
 import '../css/popup.css';
 
@@ -29,27 +29,23 @@ chrome.storage.local.get(
         notificationsContainer.innerHTML =
           '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You are logged out. Please <a class="hyperlink" href="https://khanacademy.org/login" target="_blank">log in to Khan Academy</a> to use this extension.</div></li>';
         loadingSpinner.classList.add('hidden');
-        return;
-      case '$token_expired':
-        notificationsContainer.innerHTML =
-          '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">Your authentication cookie has expired. Please <a class="hyperlink" href="https://khanacademy.org/" target="_blank">navigate to Khan Academy</a> to refresh it.</div></li>';
-        loadingSpinner.classList.add('hidden');
-        return;
+        break;
       case undefined:
         __loading_notifications__ = true;
         loadNotifications();
         break;
       default:
-        if (!Array.isArray(prefetchData)) break;
         if (prefetchData.length === 0) {
           notificationsContainer.innerHTML =
             '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You have no notifications.</div></li>';
           loadingSpinner.classList.add('hidden');
-          break;
+          return;
+        } else {
+          notificationsContainer.innerHTML = prefetchData.map(createNotificationString).join('');
+          addReplyButtonEventListeners();
+          notificationsSection.onscroll = handleScroll;
         }
-        notificationsContainer.innerHTML = prefetchData.map(createNotificationString).join('');
-        addReplyButtonEventListeners();
-        notificationsSection.onscroll = handleScroll;
+        break;
     }
 
     // Theme switching
@@ -91,7 +87,7 @@ chrome.storage.local.get(
           return;
         }
 
-        const clearNotificationsResponse = await khanApiMutation('clearBrandNewNotifications', token);
+        const clearNotificationsResponse = await khanApiFetch('clearBrandNewNotifications', token);
         if (clearNotificationsResponse.ok) {
           isMarkingRead = false;
           markAllReadLoading.classList.add('hidden');
@@ -158,7 +154,7 @@ async function loadNotifications(): Promise<void> {
     return;
   }
   try {
-    const notificationsResponse = await khanApiQuery('getNotificationsForUser', {
+    const notificationsResponse = await khanApiFetch('getNotificationsForUser', undefined, {
       after: __global_cursor__ || '',
     });
     const notificationsJSON = await notificationsResponse.json();

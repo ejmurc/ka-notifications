@@ -11,6 +11,3 @@ export type KhanAPIVariables = {
   fromVideoAuthor?: boolean;
   shownLowQualityNotice?: boolean;
 };
-export type MutationHashes = {
-  [key: string]: number;
-};

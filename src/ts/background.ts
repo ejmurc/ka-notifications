@@ -1,4 +1,4 @@
-import { khanApiQuery, getAuthToken } from '../utils/khan-api';
+import { khanApiFetch, getAuthToken } from '../utils/khan-api';
 
 const ALARM_NAME = 'KHAN_ACADEMY_NOTIFICATIONS';
 
@@ -6,20 +6,17 @@ const ALARM_NAME = 'KHAN_ACADEMY_NOTIFICATIONS';
 chrome.cookies.onChanged.addListener(async ({ cookie, removed }) => {
   if (cookie.name === 'KAAS') {
     chrome.action.setBadgeText({ text: '' });
+    chrome.alarms.clear(ALARM_NAME);
     if (removed) {
-      // Logged out
-      chrome.alarms.clear(ALARM_NAME);
       chrome.storage.local.remove(['prefetchCursor']);
       chrome.storage.local.set({
         prefetchData: '$logged_out',
       });
     } else {
-      // Logged in
-      if (await chrome.alarms.get(ALARM_NAME)) return;
+      chrome.storage.local.remove(['prefetchCursor', 'prefetchData']);
       chrome.alarms.create(ALARM_NAME, {
         periodInMinutes: 1,
       });
-      chrome.storage.local.remove(['prefetchCursor', 'prefetchData']);
       refreshNotifications();
     }
   }
@@ -38,7 +35,7 @@ chrome.alarms.create(ALARM_NAME, {
   periodInMinutes: 1,
 });
 
-chrome.storage.local.remove(['prefetch_cursor', 'prefetch_data']);
+chrome.storage.local.remove(['prefetchCursor', 'prefetchData']);
 refreshNotifications();
 
 // Teal background for notification count badge
@@ -48,17 +45,17 @@ chrome.action.setBadgeBackgroundColor({
 
 async function refreshNotifications() {
   const token = await getAuthToken();
-  if (!token) {
+  if (token === undefined) {
     chrome.action.setBadgeText({ text: '' });
     chrome.storage.local.remove(['prefetchCursor']);
     chrome.storage.local.set({
-      prefetchData: '$token_expired',
+      prefetchData: '$logged_out',
     });
     return;
   }
 
   try {
-    const notificationCountResponse = await khanApiQuery('getFullUserProfile');
+    const notificationCountResponse = await khanApiFetch('getFullUserProfile');
     const notificationCountJSON = await notificationCountResponse.json();
     const notificationCount = notificationCountJSON?.data?.user?.newNotificationCount;
 
@@ -71,7 +68,7 @@ async function refreshNotifications() {
       return;
     }
 
-    const notificationsResponse = await khanApiQuery('getNotificationsForUser');
+    const notificationsResponse = await khanApiFetch('getNotificationsForUser');
     const notificationsJSON = await notificationsResponse.json();
     const notifications = notificationsJSON?.data?.user?.notifications;
     if (notifications === null) {
