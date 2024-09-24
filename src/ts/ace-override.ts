@@ -16,7 +16,10 @@ Object.defineProperty(window, 'ace', {
       const cacheName = `__khanacademy_new_${programType}_cache__`;
       const cache = localStorage.getItem(cacheName);
       if (cache) editor.setValue(cache);
+      let saveBeforeUnload = false;
       function saveProgram() {
+        if (!saveBeforeUnload) window.addEventListener('beforeunload', saveProgram);
+        saveBeforeUnload = true;
         const content = editor.getValue();
         if (content.length === 0) {
           localStorage.removeItem(cacheName);
@@ -25,7 +28,13 @@ Object.defineProperty(window, 'ace', {
         }
       }
       editor.on('change', saveProgram);
-      window.addEventListener('beforeunload', saveProgram);
+      document.body.addEventListener('mouseup', (event) => {
+        if (event.target && event.target instanceof HTMLElement && event.target.textContent === 'Save') {
+          window.removeEventListener('beforeunload', saveProgram);
+          saveBeforeUnload = false;
+          localStorage.removeItem(cacheName);
+        }
+      });
     });
   },
 });
