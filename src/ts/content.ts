@@ -38,17 +38,16 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
       if (!(sortDropdownButton instanceof HTMLButtonElement)) return;
       sortDropdownButton.click();
       const sortButtons = document.querySelectorAll<HTMLButtonElement>(
-        "div[data-test-id='dropdown-core-container'] button",
+        "div[data-test-id='dropdown-corecontainer'] button",
       );
-      sortButtons.forEach((sortButton) => {
-        if (sortButton.innerText.includes(defaultCommentSort)) {
-          sortButton.click();
+      for (const btn of sortButtons) {
+        if (btn.innerText.includes(defaultCommentSort)) {
+          btn.click();
+          document.querySelector("div[data-testid='dropdown-popper']")?.remove();
+          break;
         }
-      });
-      window.scrollTo(0, 0);
-      if (document.activeElement && document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
       }
+      window.scrollTo(0, 0);
     });
   });
 }

@@ -275,14 +275,19 @@ async function sendMessage(event: MouseEvent): Promise<void> {
   }
 
   const params = new URL('https://www.google.com' + url).searchParams;
+  const qaExpandKey = params.get('qa_expand_key');
+  if (qaExpandKey === null) {
+    handleError('Failed to get qa_expand_key from notification URL search params');
+    return;
+  }
   let parentFeedbackType: string;
   let childFeedbackType: string;
-  let focusKind = 'scratchpad';
   if (typename === 'ResponseFeedbackNotification') {
+    // Nested?
     parentFeedbackType = feedbacktype === 'ANSWER' ? 'QUESTION' : 'COMMENT';
     childFeedbackType = 'REPLY';
-    focusKind = params.get('qa_expand_type') as string;
   } else if (typename === 'ProgramFeedbackNotification') {
+    // Top level notification?
     parentFeedbackType = feedbacktype;
     childFeedbackType = feedbacktype === 'QUESTION' ? 'ANSWER' : 'REPLY';
   } else {
@@ -296,14 +301,15 @@ async function sendMessage(event: MouseEvent): Promise<void> {
     const topicIdStr = url?.split('?')?.[0]?.split('/')?.pop();
     if (topicIdStr === undefined) throw new Error(`Failed to parse topicId ${topicIdStr}`);
     const parentFeedbackResponse = await khanApiFetch('feedbackQuery', undefined, {
-      topicId: +topicIdStr,
+      topicId: topicIdStr,
       feedbackType: parentFeedbackType,
-      currentSort: 2,
-      qaExpandKey: params.get('qa_expand_key') as string,
-      focusKind,
+      currentSort: 1,
+      qaExpandKey,
+      focusKind: 'scratchpad',
     });
 
     const parentFeedbackJSON = await parentFeedbackResponse.json();
+    console.log(parentFeedbackJSON);
     if (!parentFeedbackJSON.data.feedback) {
       throw new Error('Unsupported feedback type');
     }
