@@ -1,19 +1,19 @@
-import { requireId } from '../utils/dom-utils';
+import { requireId, requireSelector } from '../utils/dom-utils';
 
 const split = window.location.pathname.split('/');
 const isComputerScience: boolean = split[1] === 'computer-programming' || split[1] === 'cs';
 
-function getTabId(qaExpandType: string | null): string {
+function getTabSelector(qaExpandType: string | null): string {
   switch (qaExpandType) {
     case 'question':
     case 'answer':
-      return 'ka-uid-discussiontabbedpanel-0--tabbedpanel-tab-1';
+      return 'button[data-testid=questions]';
     case 'comment':
     case 'reply':
     default:
-      return 'ka-uid-discussiontabbedpanel-0--tabbedpanel-tab-2';
+      return 'button[data-testid=comments]';
     case 'project_help_question':
-      return 'ka-uid-discussiontabbedpanel-0--tabbedpanel-tab-0';
+      return 'button[data-testid=projecthelp]';
   }
 }
 
@@ -26,7 +26,8 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
 
   // Set feedback tab based on expand type
   const qaExpandType = new URLSearchParams(window.location.search).get('qa_expand_type');
-  requireId(getTabId(qaExpandType)).then((qaTab) => {
+  requireSelector(getTabSelector(qaExpandType)).then((qaTab) => {
+    //requireId(getTabId(qaExpandType)).then((qaTab) => {
     if (!(qaTab instanceof HTMLButtonElement)) return;
     qaTab.click();
     window.scrollTo(0, 0);
