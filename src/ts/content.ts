@@ -27,28 +27,32 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
   // Set feedback tab based on expand type
   const qaExpandType = new URLSearchParams(window.location.search).get('qa_expand_type');
   requireSelector(getTabSelector(qaExpandType)).then((qaTab) => {
-    //requireId(getTabId(qaExpandType)).then((qaTab) => {
     if (!(qaTab instanceof HTMLButtonElement)) return;
     qaTab.click();
-    window.scrollTo(0, 0);
 
     // Sort comments
     chrome.storage.local.get('defaultCommentSort', async ({ defaultCommentSort }) => {
-      if (!defaultCommentSort) return;
+      if (!defaultCommentSort) defaultCommentSort = 'Top Voted';
       const sortDropdownButton = await requireId('sortBy');
       if (!(sortDropdownButton instanceof HTMLButtonElement)) return;
       sortDropdownButton.click();
-      const sortButtons = document.querySelectorAll<HTMLButtonElement>(
-        "div[data-test-id='dropdown-corecontainer'] button",
-      );
+      const dropdown = await requireSelector("div[data-testid='dropdown-popper']");
+      if (!dropdown) return;
+      const sortButtons = dropdown.getElementsByTagName('button');
       for (const btn of sortButtons) {
         if (btn.innerText.includes(defaultCommentSort)) {
           btn.click();
-          document.querySelector("div[data-testid='dropdown-popper']")?.remove();
+          sortDropdownButton.blur();
           break;
         }
       }
-      window.scrollTo(0, 0);
+      for (const el of document.querySelectorAll('div')) {
+        const style = getComputedStyle(el);
+        if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+          el.scrollTo(0, 0);
+          break;
+        }
+      }
     });
   });
 }
