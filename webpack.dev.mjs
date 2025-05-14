@@ -1,3 +1,4 @@
+import { readdirSync, mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
@@ -6,6 +7,16 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const aceDir = path.resolve(__dirname, 'node_modules/ace-builds/src-min-noconflict');
+const themeFiles = readdirSync(aceDir).filter((file) => /^theme-.*\.js$/.test(file) && !file.includes('kr_theme.js'));
+const themeNames = themeFiles.map((file) => file.replace(/^theme-/, '').replace(/\.js$/, ''));
+
+const generatedThemeModule = `export const themes = ${JSON.stringify(themeNames, null, 2)};\n`;
+const generatedDir = path.resolve(__dirname, 'src/generated');
+const outputFile = path.join(generatedDir, 'themes.ts');
+mkdirSync(generatedDir, { recursive: true });
+writeFileSync(outputFile, generatedThemeModule);
 
 export default {
   mode: 'development',
@@ -50,6 +61,12 @@ export default {
         },
         {
           from: 'src/manifest.json',
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/ace-builds/src-min-noconflict'),
+          filter: (resourcePath) => {
+            return /theme-.*\.js$/.test(resourcePath) && !resourcePath.includes('kr_theme.js');
+          },
         },
       ],
     }),

@@ -14,7 +14,19 @@
   font-size: 16px;
 }
 
-#settings-section select {
+#settings-section .setting-group {
+  margin-bottom: .5rem;
+}
+
+#settings-section label {
+  display: inline-block;
+  font-size: inherit;
+  margin-right: 0.3rem;
+}
+
+#settings-section select,
+#settings-section input[type="text"],
+#settings-section input[type="number"] {
   margin-top: 0.5rem;
   background-color: var(--button-color);
   color: var(--button-text-color);
@@ -23,6 +35,17 @@
   border: 0;
   outline: 0;
   box-shadow: 0 0 1px var(--box-shadow-color);
+  width: 100%;
+  max-width: 200px;
+  box-sizing: border-box;
+}
+
+#settings-section input[type="checkbox"] {
+  vertical-align: middle;
+  accent-color: var(--button-color);
+  margin-right: 0.4rem;
+  transform: scale(1.1);
+  cursor: pointer;
 }
 
 #settings-section button {
@@ -42,4 +65,11 @@
 
 #settings-section button:hover {
   background-color: var(--button-hover-color);
+}
+
+#settings-section .checkbox-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }

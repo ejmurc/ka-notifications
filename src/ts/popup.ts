@@ -1,13 +1,16 @@
+import { themes } from '../generated/themes';
 import { getAuthToken, khanApiFetch } from '../utils/khan-api';
 import { createNotificationString, addReplyButtonEventListeners } from '../utils/notification-utils';
+import { StringMap } from '../@types/common-types';
 import '../css/popup.css';
 
 // Page switching
 const settingsSection = document.getElementById('settings-section') as HTMLDivElement;
 const notificationsSection = document.getElementById('notifications-section') as HTMLDivElement;
 const pageButton = document.getElementById('page-button') as HTMLButtonElement;
-const settingsIcon = document.getElementById('settings-icon') as HTMLElement & SVGElement;
-const backIcon = document.getElementById('back-icon') as HTMLElement & SVGElement;
+const settingsIcon = document.getElementById('settings-icon') as HTMLElement;
+const backIcon = document.getElementById('back-icon') as HTMLElement;
+
 pageButton.onclick = () => {
   notificationsSection.classList.toggle('hidden');
   settingsSection.classList.toggle('hidden');
@@ -15,14 +18,139 @@ pageButton.onclick = () => {
   backIcon.classList.toggle('hidden');
 };
 
-// Notifications from local storage
+// Notification handling
 const notificationsContainer = document.getElementById('notifications-container') as HTMLDivElement;
 const loadingSpinner = document.getElementById('loading-spinner-container') as HTMLDivElement;
 let __global_cursor__ = '';
 let __loading_notifications__ = false;
+
+function handleScroll(): void {
+  if (
+    !__loading_notifications__ &&
+    Math.abs(notificationsSection.scrollHeight - notificationsSection.scrollTop - notificationsSection.clientHeight) <
+      77
+  ) {
+    __loading_notifications__ = true;
+    loadNotifications();
+  }
+}
+
+async function loadNotifications(): Promise<void> {
+  const token = await getAuthToken();
+  if (!token) {
+    notificationsContainer.innerHTML =
+      '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You are logged out. Please <a class="hyperlink" href="https://khanacademy.org/login" target="_blank">log in to Khan Academy</a> to use this extension.</div></li>';
+    notificationsSection.onscroll = null;
+    loadingSpinner.classList.add('hidden');
+    return;
+  }
+
+  try {
+    const notificationsResponse = await khanApiFetch('getNotificationsForUser', undefined, {
+      after: __global_cursor__ || '',
+    });
+    const notificationsJSON = await notificationsResponse.json();
+    const notifications = notificationsJSON?.data?.user?.notifications;
+
+    if (!notifications) {
+      notificationsContainer.innerHTML =
+        '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You have no notifications.</div></li>';
+      notificationsSection.onscroll = null;
+      loadingSpinner.classList.add('hidden');
+      return;
+    }
+
+    notificationsContainer.innerHTML += notifications.notifications.map(createNotificationString).join('');
+    addReplyButtonEventListeners();
+
+    if (notifications.pageInfo?.nextCursor === null) {
+      notificationsSection.onscroll = null;
+      loadingSpinner.classList.add('hidden');
+    } else {
+      __global_cursor__ = notifications.pageInfo.nextCursor;
+      __loading_notifications__ = false;
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Failed to fetch') {
+      console.warn('Possible network disconnect detected, please check your internet connection.');
+    } else {
+      console.error(err);
+    }
+  }
+}
+
+// Local storage
 chrome.storage.local.get(
-  ['prefetchCursor', 'prefetchData', 'preferredTheme', 'defaultCommentSort'],
-  ({ prefetchCursor, prefetchData, preferredTheme, defaultCommentSort }) => {
+  ['prefetchCursor', 'prefetchData', 'preferredTheme', 'defaultCommentSort', 'editorSettings'],
+  ({ prefetchCursor, prefetchData, preferredTheme, defaultCommentSort, editorSettings = {} }) => {
+    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+    themes.forEach((themeName) => {
+      const option = document.createElement('option');
+      option.value = themeName;
+      option.textContent = themeName;
+      themeSelect.appendChild(option);
+    });
+    themeSelect.value = editorSettings.theme || 'textmate';
+
+    const tabSizeSelect = document.getElementById('tabsize-select') as HTMLSelectElement;
+    tabSizeSelect.value = editorSettings.tabSize || '4';
+
+    const fontSizeInput = document.getElementById('font-size-input') as HTMLInputElement;
+    fontSizeInput.value = parseInt(editorSettings.fontSize).toString();
+
+    const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
+    fontFamilySelect.value = editorSettings.fontFamily || 'Monaco';
+
+    const lineHeightInput = document.getElementById('line-height-input') as HTMLInputElement;
+    lineHeightInput.value = parseFloat(editorSettings.lineHeight).toFixed(2);
+
+    const checkboxes: StringMap = {
+      'soft-tabs-checkbox': 'useSoftTabs',
+      'wrap-checkbox': 'wrap',
+      'auto-close-checkbox': 'behavioursEnabled',
+      'show-gutter-checkbox': 'showGutter',
+      'autocomplete-checkbox': 'enableBasicAutocompletion',
+      'indent-guides-checkbox': 'displayIndentGuides',
+      'line-numbers-checkbox': 'showLineNumbers',
+      'slim-cursor-checkbox': 'slimCursor',
+    } as const;
+
+    Object.entries(checkboxes).forEach(([id, key]) => {
+      const checkbox = document.getElementById(id) as HTMLInputElement;
+      checkbox.checked = editorSettings[key] || false;
+    });
+
+    const updateEditorSettings = () => {
+      const updatedSettings = {
+        ...editorSettings,
+        theme: themeSelect.value,
+        tabSize: tabSizeSelect.value,
+        fontSize: fontSizeInput.value,
+        fontFamily: fontFamilySelect.value,
+        lineHeight: lineHeightInput.value,
+      };
+
+      Object.keys(checkboxes).forEach((id) => {
+        const key = checkboxes[id];
+        if (key) {
+          updatedSettings[key] = (document.getElementById(id) as HTMLInputElement).checked ?? false;
+        }
+      });
+
+      chrome.storage.local.set({ editorSettings: updatedSettings });
+    };
+
+    themeSelect.addEventListener('change', updateEditorSettings);
+    tabSizeSelect.addEventListener('change', updateEditorSettings);
+    fontSizeInput.addEventListener('change', updateEditorSettings);
+    fontFamilySelect.addEventListener('change', updateEditorSettings);
+    lineHeightInput.addEventListener('change', updateEditorSettings);
+
+    Object.keys(checkboxes).forEach((id) => {
+      document.getElementById(id)?.addEventListener('change', updateEditorSettings);
+    });
+
+    // Handle notifications
     __global_cursor__ = prefetchCursor ?? '';
     switch (prefetchData) {
       case '$logged_out':
@@ -51,8 +179,8 @@ chrome.storage.local.get(
     // Theme switching
     let theme = preferredTheme ?? 'light';
     const themeButton = document.getElementById('theme-button') as HTMLButtonElement;
-    const lightIcon = document.getElementById('light-icon') as HTMLElement & SVGElement;
-    const darkIcon = document.getElementById('dark-icon') as HTMLElement & SVGElement;
+    const lightIcon = document.getElementById('light-icon') as HTMLElement;
+    const darkIcon = document.getElementById('dark-icon') as HTMLElement;
 
     if (theme === 'dark') {
       lightIcon.classList.toggle('hidden');
@@ -100,28 +228,6 @@ chrome.storage.local.get(
       }
     };
 
-    // Clear cache
-    const clearNotificationCache = document.getElementById('clear-notification-cache') as HTMLButtonElement;
-    let isClearingCache = false;
-    let clearingCompleteInterval: number;
-    clearNotificationCache.onclick = async () => {
-      if (isClearingCache) return;
-      if (clearingCompleteInterval) window.clearInterval(clearingCompleteInterval);
-      isClearingCache = true;
-      clearNotificationCache.innerText = 'Clearing cache...';
-      notificationsContainer.onscroll = null;
-      notificationsContainer.innerHTML = '';
-      loadingSpinner.classList.remove('hidden');
-      __loading_notifications__ = true;
-      __global_cursor__ = '';
-      await loadNotifications();
-      clearNotificationCache.innerText = 'Cache cleared';
-      isClearingCache = false;
-      clearingCompleteInterval = window.setInterval(() => {
-        clearNotificationCache.innerText = 'Clear cache';
-      }, 4000);
-    };
-
     // Default comment sort
     const commentSort = document.getElementById('sort-comments') as HTMLInputElement;
     commentSort.value = defaultCommentSort ?? 'Top Voted';
@@ -132,56 +238,3 @@ chrome.storage.local.get(
     };
   },
 );
-
-function handleScroll(): void {
-  if (
-    !__loading_notifications__ &&
-    Math.abs(notificationsSection.scrollHeight - notificationsSection.scrollTop - notificationsSection.clientHeight) <
-      77
-  ) {
-    __loading_notifications__ = true;
-    loadNotifications();
-  }
-}
-
-async function loadNotifications(): Promise<void> {
-  const token = await getAuthToken();
-  if (!token) {
-    notificationsContainer.innerHTML =
-      '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You are logged out. Please <a class="hyperlink" href="https://khanacademy.org/login" target="_blank">log in to Khan Academy</a> to use this extension.</div></li>';
-    notificationsSection.onscroll = null;
-    loadingSpinner.classList.add('hidden');
-    return;
-  }
-  try {
-    const notificationsResponse = await khanApiFetch('getNotificationsForUser', undefined, {
-      after: __global_cursor__ || '',
-    });
-    const notificationsJSON = await notificationsResponse.json();
-    const notifications = notificationsJSON?.data?.user?.notifications;
-    if (!notifications) {
-      notificationsContainer.innerHTML =
-        '<li class="notification new"><div class="notification-header"><img class="notification-author-avatar" src="32.png"><h3 class="notification-author-nickname">KA Notifications</h3></div><div class="notification-content">You have no notifications.</div></li>';
-      notificationsSection.onscroll = null;
-      loadingSpinner.classList.add('hidden');
-      return;
-    }
-
-    notificationsContainer.innerHTML += notifications.notifications.map(createNotificationString).join('');
-    addReplyButtonEventListeners();
-
-    if (notifications.pageInfo?.nextCursor === null) {
-      notificationsSection.onscroll = null;
-      loadingSpinner.classList.add('hidden');
-    } else {
-      __global_cursor__ = notifications.pageInfo.nextCursor;
-      __loading_notifications__ = false;
-    }
-  } catch (err) {
-    if (err instanceof Error && err.message === 'Failed to fetch') {
-      console.warn('Possible network disconnect detected, please check your internet connection.');
-    } else {
-      console.error(err);
-    }
-  }
-}

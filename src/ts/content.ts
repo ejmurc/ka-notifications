@@ -55,10 +55,64 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
       }
     });
   });
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || event.data.type !== 'EDITOR_SETTINGS_REQUEST') return;
+    chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
+      window.postMessage(
+        {
+          type: 'EDITOR_SETTINGS',
+          settings: editorSettings || {},
+        },
+        '*',
+      );
+    });
+  });
+
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes['editorSettings']) {
+      window.postMessage(
+        {
+          type: 'EDITOR_SETTINGS',
+          settings: changes['editorSettings'].newValue,
+        },
+        '*',
+      );
+    }
+  });
+
+  const aceOverrideScript = document.createElement('script');
+  aceOverrideScript.src = chrome.runtime.getURL('ace-override.js');
+  document.body.appendChild(aceOverrideScript);
 }
 
 // New program
 if (isComputerScience && split[2] === 'new') {
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || event.data.type !== 'EDITOR_SETTINGS_REQUEST') return;
+    chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
+      window.postMessage(
+        {
+          type: 'EDITOR_SETTINGS',
+          settings: editorSettings || {},
+        },
+        '*',
+      );
+    });
+  });
+
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes['editorSettings']) {
+      window.postMessage(
+        {
+          type: 'EDITOR_SETTINGS',
+          settings: changes['editorSettings'].newValue,
+        },
+        '*',
+      );
+    }
+  });
+
   const aceOverrideScript = document.createElement('script');
   aceOverrideScript.src = chrome.runtime.getURL('ace-override.js');
   document.body.appendChild(aceOverrideScript);

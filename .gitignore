@@ -1,3 +1,6 @@
+# Generated files
+src/generated/
+
 # Ignore extension outputs
 chrome/
 firefox/

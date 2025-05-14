@@ -7,7 +7,7 @@
     "watch": "webpack --config webpack.dev.mjs --watch",
     "build": "webpack --config webpack.prod.mjs",
     "lint": "eslint src/ts/*.ts src/utils/*.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"src/manifest.json\" \"webpack.dev.mjs\" \"webpack.prod.mjs\" \"scripts/**\"",
+    "format": "prettier --write \"src/**/*.(ts|html)\" \"src/manifest.json\" \"webpack.dev.mjs\" \"webpack.prod.mjs\" \"scripts/**\"",
     "release": "node scripts/release.mjs"
   },
   "repository": "git+https://github.com/eliasmurcray/ka-notifications.git",
@@ -43,5 +43,7 @@
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "ace-builds": "^1.41.0"
+  }
 }

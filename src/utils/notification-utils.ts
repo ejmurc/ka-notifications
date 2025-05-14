@@ -56,17 +56,15 @@ export function createNotificationString(notification: KhanAcademyNotification):
         avatarShortnames[notification.name]
       }</b>! <i>${avatarRequirements[notification.name]}</i></div></li>`;
     case 'GroupedBadgeNotification':
-      return `<li class="notification ${
-        brandNew ? 'new' : ''
-      }"><div class="notification-header"><img class="notification-author-avatar" src="${
-        notification.badgeNotifications[0].badge.icons.compactUrl
-      }"><h3 class="notification-author-nickname">KA Badges</h3><a class="hyperlink" href="https://www.khanacademy.org${
-        notification.url
-      }" target="_blank">view badges</a><span class="notification-date">${timeSince(
-        new Date(date),
-      )} ago</span></div><p class="notification-content">You earned <b>${
-        notification.badgeNotifications[0].badge.description
-      }</b> and ${notification.badgeNotifications.length - 1} more! Congratulations!</p></li>`;
+      return `<li class="notification ${brandNew ? 'new' : ''}"><div class="notification-header">
+          <img class="notification-author-avatar" src="${notification.badgeNotifications[0].badge.icons.compactUrl}">
+          <h3 class="notification-author-nickname">KA Badges</h3>
+          <a class="hyperlink" href="https://www.khanacademy.org${notification.url}" target="_blank">view badges</a>
+          <span class="notification-date">${timeSince(new Date(date))} ago</span>
+        </div>
+        <div class="notification-content">You earned ${formatBadgeList(
+          notification.badgeNotifications.map((b: { badge: { description: string } }) => b.badge.description),
+        )}. Congratulations!</div></li>`;
     case 'BadgeNotification':
       return `<li class="notification ${
         brandNew ? 'new' : ''
@@ -340,4 +338,24 @@ async function sendMessage(event: MouseEvent): Promise<void> {
       handleError(err.message);
     }
   }
+}
+
+/**
+ * Formats an array of badge descriptions into a human-readable list
+ * with each badge wrapped in <b> tags (excluding punctuation/conjunctions).
+ *
+ * Examples:
+ * - ["Explorer"] => "<b>Explorer</b>"
+ * - ["Explorer", "Achiever"] => "<b>Explorer</b> and <b>Achiever</b>"
+ * - ["Explorer", "Achiever", "Scholar"] => "<b>Explorer</b>, <b>Achiever</b>, and <b>Scholar</b>"
+ *
+ * @param {string[]} badges - An array of badge description strings.
+ * @returns {string} A formatted string listing the badges with proper punctuation and bolding.
+ */
+function formatBadgeList(badges: string[]): string {
+  const bolded = badges.map((b) => `<b>${b}</b>`);
+  const count = bolded.length;
+  if (count === 1) return bolded[0] as string;
+  if (count === 2) return `${bolded[0]} and ${bolded[1]}`;
+  return `${bolded.slice(0, -1).join(', ')}, and ${bolded[count - 1]}`;
 }

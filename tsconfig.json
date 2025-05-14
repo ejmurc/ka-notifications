@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "types": ["ace", "chrome-types"],
-    "target": "es6",
-    "module": "es6",
+    "target": "esnext",
+    "module": "esnext",
     "strict": true,
     "moduleResolution": "node",
     "allowUnusedLabels": false,

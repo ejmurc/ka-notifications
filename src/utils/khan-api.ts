@@ -8,14 +8,12 @@ export async function khanApiFetch(
   authToken?: string,
   variables: KhanAPIVariables = {},
 ): Promise<Response> {
-  if (variables) console.log(variables);
-  let query: string | null = null;
-  if (queries[operationName] === undefined) {
+  let query: string | null = queries[operationName] ?? null;
+  if (query === null) {
     query = (await getLatestQuery(operationName)) || (await getLatestMutation(operationName));
     if (query === null) {
       throw new Error(`Failed to retrieve query ${operationName} from safelist.`);
     }
-    console.log(`Retrieved query ${operationName} as ${query}`);
     queries[operationName] = query;
   }
   const requestURL = `https://www.khanacademy.org/api/internal/graphql/${operationName}?/fastly/`;

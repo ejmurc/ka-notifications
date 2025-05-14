@@ -56,45 +56,64 @@ async function refreshNotifications() {
 
   try {
     const notificationCountResponse = await khanApiFetch('getFullUserProfile');
-    const notificationCountJSON = await notificationCountResponse.json();
+    if (!notificationCountResponse.ok) {
+      throw new Error(
+        `getFullUserProfile failed with status ${notificationCountResponse.status}: ${await notificationCountResponse.text()}`,
+      );
+    }
+    const notificationCountText = await notificationCountResponse.text();
+    const notificationCountJSON = JSON.parse(notificationCountText);
     const notificationCount = notificationCountJSON?.data?.user?.newNotificationCount;
 
     if (notificationCount === null) {
       chrome.alarms.clear(ALARM_NAME);
-      chrome.storage.local.remove(['prefetchCursor']);
-      chrome.storage.local.set({
+      await chrome.storage.local.remove(['prefetchCursor']);
+      await chrome.storage.local.set({
         prefetchData: '$logged_out',
       });
       return;
     }
 
     const notificationsResponse = await khanApiFetch('getNotificationsForUser');
-    const notificationsJSON = await notificationsResponse.json();
+    if (!notificationsResponse.ok) {
+      throw new Error(
+        `getNotificationsForUser failed with status ${notificationsResponse.status}: ${await notificationsResponse.text()}`,
+      );
+    }
+    const notificationsText = await notificationsResponse.text();
+    const notificationsJSON = JSON.parse(notificationsText);
     const notifications = notificationsJSON?.data?.user?.notifications;
+
     if (notifications === null) {
-      chrome.action.setBadgeText({
+      await chrome.action.setBadgeText({
         text: '',
       });
-      chrome.storage.local.remove(['prefetchCursor']);
-      chrome.storage.local.set({
+      await chrome.storage.local.remove(['prefetchCursor']);
+      await chrome.storage.local.set({
         prefetchData: [],
       });
       return;
     }
 
-    chrome.storage.local.set({
+    await chrome.storage.local.set({
       prefetchData: notifications.notifications,
       prefetchCursor: notifications.pageInfo.nextCursor,
     });
 
-    chrome.action.setBadgeText({
-      text: notificationCount === 0 ? '' : notificationCount > 98 ? '99+' : notificationCount.toString(),
-    });
+    const badgeText = notificationCount === 0 ? '' : notificationCount > 98 ? '99+' : notificationCount.toString();
+    await chrome.action.setBadgeText({ text: badgeText });
   } catch (err) {
-    if (err instanceof Error && err.message === 'Failed to fetch') {
-      console.warn('Possible network disconnect detected, please check your internet connection.');
-    } else {
-      console.error(err);
+    if (err instanceof SyntaxError) {
+      console.error('JSON parse error:', err);
+    } else if (err instanceof Error) {
+      if (err.message.includes('Failed to fetch')) {
+        console.warn('Network error - check internet connection');
+      } else if (err.message.includes('failed with status')) {
+        console.error('API request failed:', err.message);
+      } else {
+        console.error('Unexpected error:', err);
+      }
     }
+    console.trace();
   }
 }

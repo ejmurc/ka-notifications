@@ -11,3 +11,18 @@ export type KhanAPIVariables = {
   fromVideoAuthor?: boolean;
   shownLowQualityNotice?: boolean;
 };
+
+export type EditorSettings = {
+  fontSize?: string;
+  fontFamily?: string;
+  theme?: string;
+  wrap?: boolean;
+  showLineNumbers?: boolean;
+  showGutter?: boolean;
+  behavioursEnabled?: boolean;
+  enableBasicAutocompletion?: boolean;
+  slimCursor?: boolean;
+  useSoftTabs?: boolean;
+  tabSize?: string;
+  lineHeight?: string;
+};
