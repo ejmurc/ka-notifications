@@ -64,7 +64,6 @@ async function updateEditorSettings() {
   }
 
   const session = editor.getSession();
-  session.setMode('ace/mode/html');
   session.setOptions({
     useSoftTabs: !!settings.useSoftTabs,
     tabSize: parseInt(settings.tabSize ?? '2'),
