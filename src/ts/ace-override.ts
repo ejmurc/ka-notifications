@@ -8,7 +8,7 @@ link.crossOrigin = 'anonymous';
 document.head.appendChild(link);
 
 (async () => {
-  const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json?update=' + Date.now();
+  const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@latest/fonts.json?update=' + Date.now();
   try {
     const response = await fetch(manifestUrl);
     const fontNames: string[] = await response.json();
@@ -18,7 +18,7 @@ document.head.appendChild(link);
         (name) => `
         @font-face {
           font-family: '${name}';
-          src: url('https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf') format('truetype');
+          src: url('https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@latest/${name}.ttf?update=${Date.now()}') format('truetype');
           font-weight: 400;
           font-style: normal;
           font-display: swap;

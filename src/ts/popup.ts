@@ -120,26 +120,35 @@ chrome.storage.local.get(
     const fontSizeInput = document.getElementById('font-size-input') as HTMLInputElement;
     fontSizeInput.value = parseInt(editorSettings.fontSize ?? '14').toString();
 
-    // Fetch fonts from CDN
     const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
-    const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json?update=' + Date.now();
-    const res = await fetch(manifestUrl);
-    const fontNames: string[] = await res.json();
-
-    for (const name of fontNames) {
-      const url = `https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf`;
-      const font = new FontFace(name, `url(${url})`, { style: 'normal', weight: '400' });
-
+    (async () => {
       try {
-        await font.load();
-        document.fonts.add(font);
-        fontFamilySelect.add(new Option(name, name));
-        console.log(`${name} font loaded!`);
+        const response = await fetch(
+          'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@latest/fonts.json?update=' + Date.now(),
+        );
+        const fontNames: string[] = await response.json();
+        const promises = fontNames.map((name) => {
+          const url = `https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@latest/${name}.ttf?update=${Date.now()}`;
+          const font = new FontFace(name, `url(${url})`, { style: 'normal', weight: '400' });
+          return font
+            .load()
+            .then(() => {
+              document.fonts.add(font);
+              fontFamilySelect.add(new Option(name, name));
+              return true;
+            })
+            .catch((error) => {
+              console.error(`Failed to load ${name} font:`, error);
+              return false;
+            });
+        });
+        await Promise.allSettled(promises);
+        fontFamilySelect.value = editorSettings.fontFamily ?? 'monospace';
       } catch (error) {
-        console.error(`Failed to load ${name} font:`, error);
+        console.error('Failed to load font manifest:', error);
+        fontFamilySelect.value = editorSettings.fontFamily ?? 'monospace';
       }
-    }
-    fontFamilySelect.value = editorSettings.fontFamily ?? 'monospace';
+    })();
 
     const lineHeightInput = document.getElementById('line-height-input') as HTMLInputElement;
     lineHeightInput.value = parseFloat(editorSettings.lineHeight ?? '1.2').toFixed(2);
