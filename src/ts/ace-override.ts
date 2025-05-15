@@ -8,7 +8,7 @@ link.crossOrigin = 'anonymous';
 document.head.appendChild(link);
 
 (async () => {
-  const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json';
+  const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json?update=' + Date.now();
   try {
     const response = await fetch(manifestUrl);
     const fontNames: string[] = await response.json();

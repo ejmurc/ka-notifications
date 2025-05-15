@@ -120,54 +120,25 @@ chrome.storage.local.get(
     const fontSizeInput = document.getElementById('font-size-input') as HTMLInputElement;
     fontSizeInput.value = parseInt(editorSettings.fontSize ?? '14').toString();
 
-    // Get every supported font
-    const testElement = document.createElement('span');
-    testElement.style.position = 'absolute';
-    testElement.style.visibility = 'hidden';
-    testElement.style.whiteSpace = 'nowrap';
-    testElement.style.fontSize = '16px';
-    testElement.textContent = 'iiiiiiiiii';
-    document.body.appendChild(testElement);
-    testElement.style.fontFamily = 'monospace';
-    const controlWidth = testElement.offsetWidth;
+    // Fetch fonts from CDN
     const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
-    (async () => {
-      const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json';
-      const res = await fetch(manifestUrl);
-      const fontNames: string[] = await res.json();
+    const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json?update=' + Date.now();
+    const res = await fetch(manifestUrl);
+    const fontNames: string[] = await res.json();
 
-      for (const name of fontNames) {
-        const url = `https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf`;
-        const font = new FontFace(name, `url(${url})`, { style: 'normal', weight: '400' });
+    for (const name of fontNames) {
+      const url = `https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf`;
+      const font = new FontFace(name, `url(${url})`, { style: 'normal', weight: '400' });
 
-        try {
-          await font.load();
-          document.fonts.add(font);
-          fontFamilySelect.add(new Option(name, name));
-          console.log(`${name} font loaded!`);
-        } catch (error) {
-          console.error(`Failed to load ${name} font:`, error);
-        }
-      }
-    })();
-    for (const font of [
-      'Roboto Mono',
-      'Source Code Pro',
-      'DejaVu Sans Mono',
-      'Droid Sans Mono',
-      'Fira Code',
-      'Cascadia Code',
-      'JetBrains Mono',
-      'Ubuntu Mono',
-      'Inconsolata',
-      'PT Mono',
-    ]) {
-      testElement.style.fontFamily = font;
-      if (testElement.offsetWidth === controlWidth) {
-        fontFamilySelect.add(new Option(font, font));
+      try {
+        await font.load();
+        document.fonts.add(font);
+        fontFamilySelect.add(new Option(name, name));
+        console.log(`${name} font loaded!`);
+      } catch (error) {
+        console.error(`Failed to load ${name} font:`, error);
       }
     }
-    document.body.removeChild(testElement);
     fontFamilySelect.value = editorSettings.fontFamily ?? 'monospace';
 
     const lineHeightInput = document.getElementById('line-height-input') as HTMLInputElement;
