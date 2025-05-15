@@ -82,7 +82,7 @@ async function loadNotifications(): Promise<void> {
 
 const defaultEditorSettings: EditorSettings = {
   fontSize: '14',
-  fontFamily: 'Monaco',
+  fontFamily: 'default',
   theme: 'textmate',
   wrap: true,
   showLineNumbers: true,
@@ -100,13 +100,11 @@ const defaultEditorSettings: EditorSettings = {
 // Local storage
 chrome.storage.local.get(
   ['prefetchCursor', 'prefetchData', 'preferredTheme', 'defaultCommentSort', 'editorSettings'],
-  async ({
-    prefetchCursor,
-    prefetchData,
-    preferredTheme,
-    defaultCommentSort,
-    editorSettings = defaultEditorSettings,
-  }) => {
+  async ({ prefetchCursor, prefetchData, preferredTheme, defaultCommentSort, editorSettings }) => {
+    if (!editorSettings) {
+      editorSettings = defaultEditorSettings;
+      await chrome.storage.local.set({ editorSettings });
+    }
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
     themes.forEach((themeName) => {
       const option = document.createElement('option');
@@ -114,13 +112,13 @@ chrome.storage.local.get(
       option.textContent = themeName;
       themeSelect.appendChild(option);
     });
-    themeSelect.value = editorSettings.theme || 'textmate';
+    themeSelect.value = editorSettings.theme ?? 'textmate';
 
     const tabSizeSelect = document.getElementById('tabsize-select') as HTMLSelectElement;
-    tabSizeSelect.value = editorSettings.tabSize || '4';
+    tabSizeSelect.value = editorSettings.tabSize ?? '4';
 
     const fontSizeInput = document.getElementById('font-size-input') as HTMLInputElement;
-    fontSizeInput.value = parseInt(editorSettings.fontSize).toString();
+    fontSizeInput.value = parseInt(editorSettings.fontSize ?? '14').toString();
 
     // Get every supported font
     const testElement = document.createElement('span');
@@ -161,10 +159,10 @@ chrome.storage.local.get(
       }
     }
     document.body.removeChild(testElement);
-    fontFamilySelect.value = editorSettings.fontFamily || 'Monaco';
+    fontFamilySelect.value = editorSettings.fontFamily ?? 'monospace';
 
     const lineHeightInput = document.getElementById('line-height-input') as HTMLInputElement;
-    lineHeightInput.value = parseFloat(editorSettings.lineHeight).toFixed(2);
+    lineHeightInput.value = parseFloat(editorSettings.lineHeight ?? '1.2').toFixed(2);
 
     const checkboxes: StringMap = {
       'soft-tabs-checkbox': 'useSoftTabs',

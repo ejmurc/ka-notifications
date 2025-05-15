@@ -39,8 +39,11 @@ async function updateEditorSettings() {
   allowEditorSettingsOverride = true;
   editor.setOptions({
     fontSize: `${parseInt(settings.fontSize ?? '14')}px`,
-    fontFamily: `${settings.fontFamily || 'Monaco'}`,
-    theme: `ace/theme/${settings.theme || 'textmate'}`,
+    fontFamily:
+      settings.fontFamily && settings.fontFamily !== 'default'
+        ? `${settings.fontFamily}, 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`
+        : `'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`,
+    theme: `ace/theme/${settings.theme ?? 'textmate'}`,
     wrap: settings.wrap ?? true,
     showLineNumbers: settings.showLineNumbers ?? true,
     showGutter: settings.showGutter ?? true,
