@@ -35,7 +35,7 @@ chrome.alarms.create(ALARM_NAME, {
   periodInMinutes: 1,
 });
 
-chrome.storage.local.remove(['prefetchCursor', 'prefetchData', 'editorSettings']);
+chrome.storage.local.remove(['prefetchCursor', 'prefetchData']);
 refreshNotifications();
 
 // Teal background for notification count badge
