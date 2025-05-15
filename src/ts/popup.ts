@@ -2,6 +2,7 @@ import { themes } from '../generated/themes';
 import { getAuthToken, khanApiFetch } from '../utils/khan-api';
 import { createNotificationString, addReplyButtonEventListeners } from '../utils/notification-utils';
 import { StringMap } from '../@types/common-types';
+import { EditorSettings } from '../@types/extension-types';
 import '../css/popup.css';
 
 // Page switching
@@ -79,10 +80,33 @@ async function loadNotifications(): Promise<void> {
   }
 }
 
+const defaultEditorSettings: EditorSettings = {
+  fontSize: '14',
+  fontFamily: 'Monaco',
+  theme: 'textmate',
+  wrap: true,
+  showLineNumbers: true,
+  showGutter: true,
+  behavioursEnabled: false,
+  enableBasicAutocompletion: false,
+  slimCursor: false,
+  useSoftTabs: true,
+  tabSize: '2',
+  lineHeight: '1.2',
+  displayIndentGuides: false,
+  wideEditor: false,
+};
+
 // Local storage
 chrome.storage.local.get(
   ['prefetchCursor', 'prefetchData', 'preferredTheme', 'defaultCommentSort', 'editorSettings'],
-  ({ prefetchCursor, prefetchData, preferredTheme, defaultCommentSort, editorSettings = {} }) => {
+  async ({
+    prefetchCursor,
+    prefetchData,
+    preferredTheme,
+    defaultCommentSort,
+    editorSettings = defaultEditorSettings,
+  }) => {
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
     themes.forEach((themeName) => {
       const option = document.createElement('option');
@@ -98,7 +122,45 @@ chrome.storage.local.get(
     const fontSizeInput = document.getElementById('font-size-input') as HTMLInputElement;
     fontSizeInput.value = parseInt(editorSettings.fontSize).toString();
 
+    // Get every supported font
+    const testElement = document.createElement('span');
+    testElement.style.position = 'absolute';
+    testElement.style.visibility = 'hidden';
+    testElement.style.whiteSpace = 'nowrap';
+    testElement.style.fontSize = '16px';
+    testElement.textContent = 'iiiiiiiiii';
+    document.body.appendChild(testElement);
+    testElement.style.fontFamily = 'monospace';
+    const controlWidth = testElement.offsetWidth;
     const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
+    const terminusFont = new FontFace('Terminus', `url(${chrome.runtime.getURL('Terminus.ttf')})`, {
+      style: 'normal',
+      weight: '400',
+    });
+    try {
+      await terminusFont.load();
+      document.fonts.add(terminusFont);
+    } catch (error) {
+      console.error(error);
+    }
+    for (const font of [
+      'Roboto Mono',
+      'Source Code Pro',
+      'DejaVu Sans Mono',
+      'Droid Sans Mono',
+      'Fira Code',
+      'Cascadia Code',
+      'JetBrains Mono',
+      'Ubuntu Mono',
+      'Inconsolata',
+      'PT Mono',
+    ]) {
+      testElement.style.fontFamily = font;
+      if (testElement.offsetWidth === controlWidth) {
+        fontFamilySelect.add(new Option(font, font));
+      }
+    }
+    document.body.removeChild(testElement);
     fontFamilySelect.value = editorSettings.fontFamily || 'Monaco';
 
     const lineHeightInput = document.getElementById('line-height-input') as HTMLInputElement;
@@ -113,6 +175,7 @@ chrome.storage.local.get(
       'indent-guides-checkbox': 'displayIndentGuides',
       'line-numbers-checkbox': 'showLineNumbers',
       'slim-cursor-checkbox': 'slimCursor',
+      'wide-editor-checkbox': 'wideEditor',
     } as const;
 
     Object.entries(checkboxes).forEach(([id, key]) => {

@@ -14,6 +14,13 @@
   font-size: 16px;
 }
 
+#settings-section .divider {
+  border: none;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 1rem 0;
+}
+
 #settings-section .setting-group {
   margin-bottom: .5rem;
 }

@@ -25,4 +25,6 @@ export type EditorSettings = {
   useSoftTabs?: boolean;
   tabSize?: string;
   lineHeight?: string;
+  displayIndentGuides?: boolean;
+  wideEditor?: boolean;
 };

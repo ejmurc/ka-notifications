@@ -120,6 +120,7 @@
     <section id="settings-section" class="hidden">
       <h1>Settings</h1>
       <div>Customize your experience.</div>
+      <div class="divider"></div>
       <h2>Default T&T Sort</h2>
       <div>Set your default comment sort on Khan Academy.</div>
       <select id="sort-comments">
@@ -127,7 +128,9 @@
         <option value="Top Voted">Top Voted</option>
         <option value="Recent">Recent</option>
       </select>
+      <div class="divider"></div>
       <h2>Editor Settings</h2>
+      <div>Customize the appearance of the Khan Academy code editor.</div>
       <div class="setting-group">
         <label for="theme-select">Theme</label>
         <select id="theme-select"></select>
@@ -149,17 +152,8 @@
         <label for="font-family-select">Font Family</label>
         <select id="font-family-select">
           <option value="monospace">Monospace</option>
-          <option value="Consolas">Consolas</option>
           <option value="Courier New">Courier New</option>
-          <option value="Lucida Console">Lucida Console</option>
-          <option value="Menlo">Menlo</option>
-          <option value="Monaco">Monaco</option>
-          <option value="Arial">Arial</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Georgia">Georgia</option>
-          <option value="sans-serif">Sans-serif</option>
-          <option value="serif">Serif</option>
+          <option value="Terminus">Terminus</option>
         </select>
       </div>
       <div class="setting-group">
@@ -169,37 +163,42 @@
       <div class="checkbox-container">
         <label>
           <input type="checkbox" id="soft-tabs-checkbox" />
-          Use Soft Tabs
+          Soft Tabs
         </label>
         <label>
           <input type="checkbox" id="wrap-checkbox" />
-          Wrap Lines
+          Line Wrap
         </label>
         <label>
           <input type="checkbox" id="auto-close-checkbox" />
-          Auto Close Brackets
+          Smart Brackets
         </label>
         <label>
           <input type="checkbox" id="show-gutter-checkbox" />
-          Show Gutter
+          Gutter
         </label>
         <label>
           <input type="checkbox" id="autocomplete-checkbox" />
-          Enable Autocomplete
+          Autocomplete
         </label>
         <label>
           <input type="checkbox" id="indent-guides-checkbox" />
-          Show Indent Guides
+          Indent Guides
         </label>
         <label>
           <input type="checkbox" id="line-numbers-checkbox" />
-          Show Line Numbers
+          Line Numbers
         </label>
         <label>
           <input type="checkbox" id="slim-cursor-checkbox" />
           Slim Cursor
         </label>
+        <label>
+          <input type="checkbox" id="wide-editor-checkbox" />
+          Theater Mode
+        </label>
       </div>
+      <div class="divider"></div>
       <h2>Leave a review</h2>
       <div>
         If you are enjoying this extension and want to make it more visible to others, we would appreciate it if you

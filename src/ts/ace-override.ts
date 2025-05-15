@@ -41,12 +41,13 @@ async function updateEditorSettings() {
     fontSize: `${parseInt(settings.fontSize ?? '14')}px`,
     fontFamily: `${settings.fontFamily || 'Monaco'}`,
     theme: `ace/theme/${settings.theme || 'textmate'}`,
-    wrap: settings.wrap !== false,
-    showLineNumbers: settings.showLineNumbers !== false,
-    showGutter: settings.showGutter !== false,
-    behavioursEnabled: settings.behavioursEnabled !== false,
-    enableLiveAutocompletion: settings.enableBasicAutocompletion !== false,
-    enableBasicAutocompletion: settings.enableBasicAutocompletion !== false,
+    wrap: settings.wrap ?? true,
+    showLineNumbers: settings.showLineNumbers ?? true,
+    showGutter: settings.showGutter ?? true,
+    behavioursEnabled: settings.behavioursEnabled ?? false,
+    enableLiveAutocompletion: settings.enableBasicAutocompletion ?? false,
+    enableBasicAutocompletion: settings.enableBasicAutocompletion ?? false,
+    displayIndentGuides: settings.displayIndentGuides ?? false,
   });
   allowEditorSettingsOverride = false;
 
@@ -65,11 +66,36 @@ async function updateEditorSettings() {
 
   const session = editor.getSession();
   session.setOptions({
-    useSoftTabs: !!settings.useSoftTabs,
+    useSoftTabs: settings.useSoftTabs ?? true,
     tabSize: parseInt(settings.tabSize ?? '2'),
   });
 
   editor.container.style.lineHeight = settings.lineHeight || 'normal';
+
+  if (settings.wideEditor) {
+    const main = document.getElementById('main-content') as HTMLDivElement;
+    const child = main.children[0] as HTMLDivElement;
+    child.style.margin = '0';
+    const scratchpadWrapOuter = document.getElementsByClassName('scratchpad-wrap-outer')[0] as HTMLDivElement;
+    scratchpadWrapOuter.style.margin = '0';
+    const wrapOuterChild = scratchpadWrapOuter.children[0] as HTMLDivElement;
+    wrapOuterChild.style.margin = '0';
+    const scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
+    scratchpadWrap.style.width = '100vw';
+  } else {
+    const main = document.getElementById('main-content') as HTMLDivElement;
+    const child = main.children[0] as HTMLDivElement;
+    child.style.margin = '';
+
+    const scratchpadWrapOuter = document.getElementsByClassName('scratchpad-wrap-outer')[0] as HTMLDivElement;
+    scratchpadWrapOuter.style.margin = '';
+
+    const wrapOuterChild = scratchpadWrapOuter.children[0] as HTMLDivElement;
+    wrapOuterChild.style.margin = '';
+
+    const scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
+    scratchpadWrap.style.width = '';
+  }
 
   editor.renderer.updateFontSize();
   editor.renderer.updateCursor();

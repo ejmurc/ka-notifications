@@ -81,6 +81,15 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
     }
   });
 
+  const fontStyle = document.createElement('style');
+  fontStyle.textContent = `
+    @font-face {
+      font-family: 'Terminus';
+      src: url('${chrome.runtime.getURL('Terminus.ttf')}') format('truetype');
+    }
+  `;
+  document.head.appendChild(fontStyle);
+
   const aceOverrideScript = document.createElement('script');
   aceOverrideScript.src = chrome.runtime.getURL('ace-override.js');
   document.body.appendChild(aceOverrideScript);
@@ -88,6 +97,15 @@ if (isComputerScience && projectId != null && /^\d{16}$/.test(projectId)) {
 
 // New program
 if (isComputerScience && split[2] === 'new') {
+  const fontStyle = document.createElement('style');
+  fontStyle.textContent = `
+    @font-face {
+      font-family: 'Terminus';
+      src: url('${chrome.runtime.getURL('Terminus.ttf')}') format('truetype');
+    }
+  `;
+  document.head.appendChild(fontStyle);
+
   window.addEventListener('message', (event) => {
     if (event.source !== window || event.data.type !== 'EDITOR_SETTINGS_REQUEST') return;
     chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
