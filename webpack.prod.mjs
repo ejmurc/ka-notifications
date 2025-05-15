@@ -69,15 +69,6 @@ export default {
         {
           from: 'src/manifest.json',
         },
-        {
-          from: 'src/fonts',
-        },
-        {
-          from: path.resolve(__dirname, 'node_modules/ace-builds/src-min-noconflict'),
-          filter: (resourcePath) => {
-            return /theme-.*\.js$/.test(resourcePath) && !resourcePath.includes('kr_theme.js');
-          },
-        },
       ],
     }),
     new HtmlWebpackPlugin({

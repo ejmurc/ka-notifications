@@ -131,16 +131,25 @@ chrome.storage.local.get(
     testElement.style.fontFamily = 'monospace';
     const controlWidth = testElement.offsetWidth;
     const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
-    const terminusFont = new FontFace('Terminus', `url(${chrome.runtime.getURL('Terminus.ttf')})`, {
-      style: 'normal',
-      weight: '400',
-    });
-    try {
-      await terminusFont.load();
-      document.fonts.add(terminusFont);
-    } catch (error) {
-      console.error(error);
-    }
+    (async () => {
+      const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json';
+      const res = await fetch(manifestUrl);
+      const fontNames: string[] = await res.json();
+
+      for (const name of fontNames) {
+        const url = `https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf`;
+        const font = new FontFace(name, `url(${url})`, { style: 'normal', weight: '400' });
+
+        try {
+          await font.load();
+          document.fonts.add(font);
+          fontFamilySelect.add(new Option(name, name));
+          console.log(`${name} font loaded!`);
+        } catch (error) {
+          console.error(`Failed to load ${name} font:`, error);
+        }
+      }
+    })();
     for (const font of [
       'Roboto Mono',
       'Source Code Pro',

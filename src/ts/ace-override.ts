@@ -1,6 +1,37 @@
 import { requireClassName } from '../utils/dom-utils';
 import { EditorSettings } from '../@types/extension-types';
 
+const link = document.createElement('link');
+link.rel = 'preconnect';
+link.href = 'https://cdn.jsdelivr.net';
+link.crossOrigin = 'anonymous';
+document.head.appendChild(link);
+
+(async () => {
+  const manifestUrl = 'https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/fonts.json';
+  try {
+    const response = await fetch(manifestUrl);
+    const fontNames: string[] = await response.json();
+    const style = document.createElement('style');
+    style.textContent = fontNames
+      .map(
+        (name) => `
+        @font-face {
+          font-family: '${name}';
+          src: url('https://cdn.jsdelivr.net/gh/eliasmurcray/cdn@mainline/${name}.ttf') format('truetype');
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
+        }
+      `,
+      )
+      .join('\n');
+    document.head.appendChild(style);
+  } catch (error) {
+    console.error('Failed to load font manifest or fonts:', error);
+  }
+})();
+
 type Ace = typeof ace;
 let _ace: Ace;
 let editor: AceAjax.Editor;
@@ -104,6 +135,12 @@ async function updateEditorSettings() {
   editor.renderer.updateCursor();
 }
 
+interface AceConfig {
+  config: {
+    set: (key: string, value: string) => void;
+  };
+}
+
 Object.defineProperty(window, 'ace', {
   get() {
     return _ace;
@@ -111,6 +148,10 @@ Object.defineProperty(window, 'ace', {
   set(value: Ace) {
     _ace = value;
     requireClassName('ace_editor').then((elements) => {
+      (_ace as unknown as AceConfig).config.set(
+        'themePath',
+        'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
+      );
       const editorElement = <HTMLDivElement>elements[0];
       editor = _ace.edit(editorElement);
       const originalSetFontSize = editor.setFontSize.bind(editor);
