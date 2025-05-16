@@ -3,7 +3,7 @@ window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Pr
   const silent_fetch = async (): Promise<Response> => {
     try {
       return await _fetch(input, init);
-    } catch (error) {
+    } catch {
       return new Response(null, { status: 404 });
     }
   };
