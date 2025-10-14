@@ -45,7 +45,6 @@ chrome.action.setBadgeBackgroundColor({
 });
 
 async function refreshNotifications() {
-  await new Promise((r) => setTimeout(r, 10000));
   const token = await getAuthToken();
   if (token === undefined) {
     chrome.action.setBadgeText({ text: '' });
@@ -64,8 +63,7 @@ async function refreshNotifications() {
       if (!response.ok) {
         throw new Error(`getNotificationsForUser failed with status ${response.status}: ${await response.text()}`);
       }
-      const text = await response.text();
-      const json = JSON.parse(text);
+      const json = await response.json();
       const data = json?.data?.user?.notifications;
       if (!data || !data.notifications) break;
       const batch: KhanAcademyNotification[] = data.notifications;
@@ -73,8 +71,7 @@ async function refreshNotifications() {
       nextCursor = data.pageInfo?.nextCursor;
       if (batch.some((n) => !n.brandNew) || notifications.length > 99 || !nextCursor) break;
     }
-    const notificationCount = notifications.length;
-    if (notificationCount === 0) {
+    if (notifications.length === 0) {
       await chrome.action.setBadgeText({
         text: '',
       });
@@ -87,7 +84,8 @@ async function refreshNotifications() {
         prefetchData: notifications,
         prefetchCursor: nextCursor,
       });
-      const badgeText = notificationCount > 98 ? '99+' : notificationCount.toString();
+      const notificationCount = notifications.findIndex((n) => !n.brandNew);
+      const badgeText = notificationCount === 0 ? '' : notificationCount > 98 ? '99+' : notificationCount.toString();
       await chrome.action.setBadgeText({ text: badgeText });
     }
   } catch (err) {
