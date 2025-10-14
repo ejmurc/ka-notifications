@@ -221,7 +221,11 @@ chrome.storage.local.get(
         } else {
           notificationsContainer.innerHTML = prefetchData.map(createNotificationString).join('');
           addReplyButtonEventListeners();
-          notificationsSection.onscroll = handleScroll;
+          if (__global_cursor__ === '') {
+            loadingSpinner.classList.add('hidden');
+          } else {
+            notificationsSection.onscroll = handleScroll;
+          }
         }
         break;
     }

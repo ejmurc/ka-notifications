@@ -1,3 +1,4 @@
+import type { KhanAcademyNotification } from '../@types/notification.d.ts';
 import { khanApiFetch, getAuthToken } from '../utils/khan-api';
 
 const ALARM_NAME = 'KHAN_ACADEMY_NOTIFICATIONS';
@@ -44,6 +45,7 @@ chrome.action.setBadgeBackgroundColor({
 });
 
 async function refreshNotifications() {
+  await new Promise((r) => setTimeout(r, 10000));
   const token = await getAuthToken();
   if (token === undefined) {
     chrome.action.setBadgeText({ text: '' });
@@ -55,36 +57,24 @@ async function refreshNotifications() {
   }
 
   try {
-    const notificationCountResponse = await khanApiFetch('getFullUserProfile');
-    if (!notificationCountResponse.ok) {
-      throw new Error(
-        `getFullUserProfile failed with status ${notificationCountResponse.status}: ${await notificationCountResponse.text()}`,
-      );
+    const notifications: KhanAcademyNotification[] = [];
+    let nextCursor = '';
+    for (;;) {
+      const response = await khanApiFetch('getNotificationsForUser', undefined, { after: nextCursor });
+      if (!response.ok) {
+        throw new Error(`getNotificationsForUser failed with status ${response.status}: ${await response.text()}`);
+      }
+      const text = await response.text();
+      const json = JSON.parse(text);
+      const data = json?.data?.user?.notifications;
+      if (!data || !data.notifications) break;
+      const batch: KhanAcademyNotification[] = data.notifications;
+      notifications.push(...batch);
+      nextCursor = data.pageInfo?.nextCursor;
+      if (batch.some((n) => !n.brandNew) || notifications.length > 99 || !nextCursor) break;
     }
-    const notificationCountText = await notificationCountResponse.text();
-    const notificationCountJSON = JSON.parse(notificationCountText);
-    const notificationCount = notificationCountJSON?.data?.user?.newNotificationCount;
-
-    if (notificationCount === null) {
-      chrome.alarms.clear(ALARM_NAME);
-      await chrome.storage.local.remove(['prefetchCursor']);
-      await chrome.storage.local.set({
-        prefetchData: '$logged_out',
-      });
-      return;
-    }
-
-    const notificationsResponse = await khanApiFetch('getNotificationsForUser');
-    if (!notificationsResponse.ok) {
-      throw new Error(
-        `getNotificationsForUser failed with status ${notificationsResponse.status}: ${await notificationsResponse.text()}`,
-      );
-    }
-    const notificationsText = await notificationsResponse.text();
-    const notificationsJSON = JSON.parse(notificationsText);
-    const notifications = notificationsJSON?.data?.user?.notifications;
-
-    if (notifications === null) {
+    const notificationCount = notifications.length;
+    if (notificationCount === 0) {
       await chrome.action.setBadgeText({
         text: '',
       });
@@ -92,16 +82,14 @@ async function refreshNotifications() {
       await chrome.storage.local.set({
         prefetchData: [],
       });
-      return;
+    } else {
+      await chrome.storage.local.set({
+        prefetchData: notifications,
+        prefetchCursor: nextCursor,
+      });
+      const badgeText = notificationCount > 98 ? '99+' : notificationCount.toString();
+      await chrome.action.setBadgeText({ text: badgeText });
     }
-
-    await chrome.storage.local.set({
-      prefetchData: notifications.notifications,
-      prefetchCursor: notifications.pageInfo.nextCursor,
-    });
-
-    const badgeText = notificationCount === 0 ? '' : notificationCount > 98 ? '99+' : notificationCount.toString();
-    await chrome.action.setBadgeText({ text: badgeText });
   } catch (err) {
     if (err instanceof SyntaxError) {
       console.error('JSON parse error:', err);
