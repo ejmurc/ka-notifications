@@ -84,7 +84,14 @@ async function refreshNotifications() {
         prefetchData: notifications,
         prefetchCursor: nextCursor,
       });
-      const notificationCount = notifications.findIndex((n) => !n.brandNew);
+      console.log(notifications);
+      let notificationCount = 0;
+      for (let i = 0; i < notifications.length; i++) {
+        if (!notifications[i].brandNew) {
+          break;
+        }
+        notificationCount++;
+      }
       const badgeText = notificationCount === 0 ? '' : notificationCount > 98 ? '99+' : notificationCount.toString();
       await chrome.action.setBadgeText({ text: badgeText });
     }
