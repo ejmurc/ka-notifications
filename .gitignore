@@ -33,7 +33,7 @@ lerna-debug.log*
 
 # Ignore package-lock files
 package-lock.json
-yarn.lock
+*.lock
 
 # Ignore local configuration files
 /.env.local

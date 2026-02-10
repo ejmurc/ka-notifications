@@ -1,0 +1,120 @@
+@import "./theme/light.css";
+@import "./theme/dark.css";
+@import "./components/notifications.css";
+@import "./components/settings.css";
+
+body {
+  width: 500px;
+  margin: 0;
+  --font-family-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family-system);
+  font-size: 14px;
+  line-height: 1.75;
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  transition: background-color var(--md-sys-motion-duration-medium, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    color var(--md-sys-motion-duration-medium, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  --md-ref-typeface-brand: var(--font-family-system);
+  --md-ref-typeface-plain: var(--font-family-system);
+}
+
+body.light {
+  --hyperlink-color: #1890ff;
+}
+
+body.dark {
+  --hyperlink-color: #00bfff;
+}
+
+a {
+  text-decoration-color: #00000000;
+  color: var(--hyperlink-color);
+  transition: text-decoration-color 0.1s ease-in-out;
+}
+
+a:hover {
+  text-decoration-color: var(--hyperlink-color);
+}
+
+::-webkit-scrollbar {
+  width: 14px;
+  transition: 0.1s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb {
+  width: 5px;
+  border-radius: 10px;
+}
+
+body ::-webkit-scrollbar {
+  background: #ffffff;
+}
+
+body ::-webkit-scrollbar-thumb {
+  border: 4px solid #ffffff;
+  background: #aaaaaa;
+}
+
+body ::-webkit-scrollbar-thumb:active {
+  background: #838383;
+}
+
+body.dark ::-webkit-scrollbar {
+  background: #222325;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  border: 4px solid #222325;
+  background: #3c3e42;
+}
+
+body.dark ::-webkit-scrollbar-thumb:active {
+  background: #4c4f55;
+}
+
+.hidden {
+  display: none !important;
+}
+
+section {
+  width: 100%;
+  height: 444px;
+  overflow: hidden auto;
+}
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 0.25rem;
+  height: 2.75rem;
+  padding: 0 1rem;
+  background-color: var(--md-sys-color-primary-container);
+  transition: background-color var(--md-sys-motion-duration-medium, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    color var(--md-sys-motion-duration-medium, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  --md-icon-button-color: var(--md-sys-color-on-primary-container);
+  --md-icon-button-icon-size: 1.125rem;
+  --md-circular-progress-size: 1.625rem;
+}
+
+.notifications-header md-icon svg path {
+  fill: var(--md-sys-color-on-primary-container);
+}
+
+#notifications-profile-link :nth-child(3),
+#notifications-profile-link :nth-child(2) {
+  fill: var(--md-sys-color-primary-container, #FFFFFF);
+}
+
+#notifications-page-toggle {
+  margin-left: auto;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 18px;
+  box-sizing: border-box;
+  margin-bottom: 7px;
+}

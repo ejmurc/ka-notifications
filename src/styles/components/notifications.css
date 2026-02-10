@@ -1,0 +1,134 @@
+#notifications-section {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+
+#notifications-container {
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+
+#notifications-container:last-child {
+  padding-bottom: 20px;
+}
+
+#active-textarea {
+  width: 100%;
+  display: block;
+  resize: none;
+  padding: 8px;
+  outline: 0;
+  border: 1px solid var(--border-color);
+  font: inherit;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  line-height: 18px;
+  height: 36px;
+}
+
+.notification {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.notification:hover {
+  background-color: var(--md-sys-color-surface-container-low);
+}
+
+.notification-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.notification-author-avatar {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+.notification-author-nickname {
+  display: inline-block;
+  font-size: inherit;
+  font-weight: 600;
+  margin: 8px 8px 8px 0px;
+  margin-right: 8px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.notification-header .hyperlink {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-right: 8px;
+}
+
+.notification-date {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.notification-feedback-container {
+  margin-top: 8px;
+}
+
+.notification-feedback-button {
+  border: 0;
+  outline: 0;
+  box-shadow: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--hyperlink-color);
+  text-decoration: underline 1px #0000;
+  background-color: #0000;
+  cursor: pointer;
+  transition: 0.1s ease-in-out;
+}
+
+.notification-feedback-button:hover {
+  text-decoration-color: var(--hyperlink-color);
+}
+
+.notification-content {
+  margin: 0;
+  line-height: 18px;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notification-content pre {
+  width: 100%;
+  overflow-x: auto;
+  font-family:
+    Söhne Mono,
+    Monaco,
+    Andale Mono,
+    Ubuntu Mono,
+    monospace;
+  font-size: 10px;
+  padding: 6px;
+  background-color: var(--button-hover-color);
+  color: var(--button-text-color);
+  box-sizing: border-box;
+  border-radius: 2px;
+  white-space: pre-wrap;
+  margin-block: 8px;
+  box-shadow: 0 0 1px #000a;
+}
+
+#notifications-loading {
+  margin: 20px 0;
+}
