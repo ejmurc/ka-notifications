@@ -1,11 +1,12 @@
 import { waitForId, waitForSelector } from './lib/dom';
 
 const pathSegments = window.location.pathname.split('/');
-const isComputerSciencePage = pathSegments[1] === 'computer-programming' || pathSegments[1] === 'cs';
+const isComputerSciencePage =
+  pathSegments[1] === 'computer-programming' || pathSegments[1] === 'cs';
 const projectId = pathSegments[3]?.split('?')?.[0];
 
 async function initializeContentScript(): Promise<void> {
-  await new Promise<void>((resolve) => {
+  await new Promise<void>(resolve => {
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       resolve();
     } else {
@@ -30,7 +31,7 @@ async function initializeContentScript(): Promise<void> {
       window.postMessage({ type: 'EDITOR_SETTINGS', settings }, '*');
     };
 
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', event => {
       if (event.source === window && event.data.type === 'EDITOR_SETTINGS_REQUEST') {
         chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
           postEditorSettings(editorSettings || {});
@@ -61,7 +62,8 @@ async function initializeContentScript(): Promise<void> {
     if (qaTabElement instanceof HTMLButtonElement) {
       qaTabElement.click();
 
-      const { defaultCommentSort = 'Top Voted' } = await chrome.storage.local.get('defaultCommentSort');
+      const { defaultCommentSort = 'Top Voted' } =
+        await chrome.storage.local.get('defaultCommentSort');
       const sortButton = await waitForId('sortBy');
       if (sortButton instanceof HTMLButtonElement) {
         sortButton.click();

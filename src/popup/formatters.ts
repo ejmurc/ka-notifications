@@ -24,7 +24,7 @@ export function timeSince(date: Date): string {
 }
 
 export function formatBadgeList(badges: string[]): string {
-  const bolded = badges.map((b) => `<b>${b}</b>`);
+  const bolded = badges.map(b => `<b>${b}</b>`);
   const count = bolded.length;
   if (count === 1) return bolded[0] as string;
   if (count === 2) return `${bolded[0]} and ${bolded[1]}`;

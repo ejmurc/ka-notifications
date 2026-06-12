@@ -1,8 +1,10 @@
 import { ALARM_NAME } from '../lib/constants';
-import { refreshNotifications } from './refresh';
+import { syncUserProfile } from './profile';
+import { syncMonospaceFonts } from './fonts';
+import { syncNotifications } from './notifications';
 
-export function handleAlarm(alarm: chrome.alarms.Alarm) {
-  if (alarm.name === ALARM_NAME) {
-    refreshNotifications();
+export async function handleAlarm({ name }: chrome.alarms.Alarm): Promise<void> {
+  if (name === ALARM_NAME) {
+    await Promise.all([syncUserProfile(), syncNotifications(), syncMonospaceFonts()]);
   }
 }

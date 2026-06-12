@@ -15,10 +15,13 @@ export function parseMarkdown(text: string): string {
     text = text.replace(/_([^\n_]+?)_/g, '<i>$1</i>');
     text = text.replace(/~([^\n~]+?)~/g, '<s>$1</s>');
   }
-  text = text.replace(/https?:\/\/\S+/g, (url) => `<a class="hyperlink" href="${url}" target="_blank">${url}</a>`);
+  text = text.replace(
+    /https?:\/\/\S+/g,
+    url => `<a class="notification-link" href="${url}" target="_blank">${url}</a>`,
+  );
   text = text.replace(
     /@([a-zA-Z][a-zA-Z\d]{0,39})/g,
-    '<a class="hyperlink" href="https://www.khanacademy.org/profile/$1" target="_blank">@$1</a>',
+    '<a class="notification-link" href="https://www.khanacademy.org/profile/$1" target="_blank">@$1</a>',
   );
   text = text.replace(/\x00CB(\d+)\x00/g, (_, i) => `<pre><code>${codeBlocks[+i]}</code></pre>`);
   text = text.replace(/\x00CI(\d+)\x00/g, (_, i) => `<code>${codeInlines[+i]}</code>`);
@@ -36,5 +39,5 @@ const ESCAPE_MAP = {
 const ESCAPE_REGEX = /[&<>"']/g;
 
 export function escapeHtml(str: string): string {
-  return str.replace(ESCAPE_REGEX, (c) => ESCAPE_MAP[c as keyof typeof ESCAPE_MAP]);
+  return str.replace(ESCAPE_REGEX, c => ESCAPE_MAP[c as keyof typeof ESCAPE_MAP]);
 }

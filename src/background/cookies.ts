@@ -1,6 +1,7 @@
 import { ALARM_NAME } from '../lib/constants';
 import { StorageManager } from '../lib/storage';
-import { refreshNotifications } from './refresh';
+import { syncNotifications } from './notifications';
+import { syncUserProfile } from './profile';
 
 export async function handleCookieChange({
   cookie,
@@ -14,12 +15,24 @@ export async function handleCookieChange({
     chrome.action.setBadgeText({ text: '' });
     chrome.alarms.clear(ALARM_NAME);
     if (removed) {
-      await StorageManager.removeItem('cursor');
-      await StorageManager.setItem('authenticated', false);
+      await StorageManager.remove([
+        'authenticated',
+        'notifications',
+        'notificationCursor',
+        'nickname',
+        'username',
+        'points',
+        'avatarSrc',
+        'profileLoaded',
+      ]);
     } else {
-      await StorageManager.removeAll(['cursor', 'notifications']);
-      chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
-      refreshNotifications();
+      await StorageManager.remove(['cursor', 'notifications']);
+      await Promise.all([
+        StorageManager.set('authenticated', true),
+        syncNotifications(),
+        syncUserProfile(),
+        chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 }),
+      ]);
     }
   }
 }

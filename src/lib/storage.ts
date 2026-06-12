@@ -1,44 +1,34 @@
-import { StorageData } from '../types/extension';
+import type { StorageData } from '../types/extension';
+import { storageKeyset } from './defaults';
 
 export class StorageManager {
-  private static cache: StorageData | null = null;
+  static async get<K extends keyof StorageData>(key: K): Promise<StorageData[K] | undefined> {
+    const result = await chrome.storage.local.get([key]);
+    return result[key] as StorageData[K];
+  }
 
-  static async getAll(): Promise<StorageData> {
-    if (!this.cache) {
-      this.cache = await new Promise<StorageData>((resolve) => {
-        chrome.storage.local.get(null, (data) => resolve(data as StorageData));
-      });
+  static async getAll(): Promise<Partial<StorageData>> {
+    const result = await chrome.storage.local.get([...storageKeyset]);
+    return result as Partial<StorageData>;
+  }
+
+  static set<K extends keyof StorageData>(key: K, value: StorageData[K]): Promise<void>;
+  static set(data: Partial<StorageData>): Promise<void>;
+  static set<K extends keyof StorageData>(
+    keyOrData: K | Partial<StorageData>,
+    value?: StorageData[K],
+  ): Promise<void> {
+    if (typeof keyOrData === 'string') {
+      return chrome.storage.local.set({ [keyOrData]: value });
     }
-    return this.cache;
+    return chrome.storage.local.set(keyOrData);
   }
 
-  static async getItem<K extends keyof StorageData>(key: K): Promise<StorageData[K] | undefined> {
-    if (this.cache) return this.cache[key];
-    const data = await new Promise<StorageData>((resolve) => {
-      chrome.storage.local.get([key], (result) => resolve(result as StorageData));
-    });
-    return data[key];
+  static remove<K extends keyof StorageData>(key: K | K[]): Promise<void> {
+    return chrome.storage.local.remove(key);
   }
 
-  static async setItem<K extends keyof StorageData>(key: K, value: StorageData[K]): Promise<void> {
-    this.cache = { ...(this.cache || {}), [key]: value };
-    return chrome.storage.local.set({ [key]: value });
-  }
-
-  static async setAll(data: Partial<StorageData>): Promise<void> {
-    this.cache = { ...(this.cache || {}), ...data };
-    return chrome.storage.local.set(data);
-  }
-
-  static async removeItem<K extends keyof StorageData>(key: K): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.remove([key], () => resolve());
-    });
-  }
-
-  static async removeAll(keys: (keyof StorageData)[]): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.remove(keys, () => resolve());
-    });
+  static clear(): Promise<void> {
+    return chrome.storage.local.clear();
   }
 }

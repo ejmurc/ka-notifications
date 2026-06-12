@@ -17,10 +17,7 @@ export function isNetworkError(error) {
 
   // Safari 17+: generic "Load failed" message, no stack
   if (message === 'load failed') {
-    return (
-      error.stack === undefined ||
-      '__sentry_captured__' in error
-    );
+    return error.stack === undefined || '__sentry_captured__' in error;
   }
 
   // Standardized network errors

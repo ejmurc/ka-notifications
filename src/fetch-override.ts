@@ -9,13 +9,15 @@ window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Pr
   };
   if (
     !(input instanceof Request) ||
-    !input.url?.startsWith('https://www.khanacademy.org/api/internal/graphql/getFeedbackRepliesPage')
+    !input.url?.startsWith(
+      'https://www.khanacademy.org/api/internal/graphql/getFeedbackRepliesPage',
+    )
   ) {
     return silent_fetch();
   }
   const blob = await input.blob();
   const reader = new FileReader();
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     reader.onload = async () => {
       const contents = reader.result;
       if (contents === null || contents instanceof ArrayBuffer) return resolve(silent_fetch());

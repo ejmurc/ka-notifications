@@ -10,20 +10,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const aceDir = path.resolve(__dirname, '..', 'node_modules/ace-builds/src-min-noconflict');
-const themeFiles = readdirSync(aceDir).filter((file) => /^theme-.*\.js$/.test(file) && !file.includes('kr_theme.js'));
-const themeNames = themeFiles.map((file) => file.replace(/^theme-/, '').replace(/\.js$/, ''));
-const generatedDir = path.resolve(__dirname, '..', 'src/generated');
+const themeFiles = readdirSync(aceDir).filter(
+  file => /^theme-.*\.js$/.test(file) && !file.includes('kr_theme.js'),
+);
+const themeNames = themeFiles.map(file => file.replace(/^theme-/, '').replace(/\.js$/, ''));
 
+const generatedDir = path.resolve(__dirname, '..', 'src/generated');
 mkdirSync(generatedDir, { recursive: true });
-writeFileSync(path.join(generatedDir, 'themes.ts'), `export const themes = ${JSON.stringify(themeNames, null, 2)};\n`);
+writeFileSync(
+  path.join(generatedDir, 'themes.ts'),
+  `export const themes = ${JSON.stringify(themeNames, null, 2)};\n`,
+);
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const result = {
-    mode: 'development',
-    watch: false,
-  };
-
+  const result = { mode: 'development', watch: false };
   for (const arg of args) {
     if (arg.startsWith('--mode=')) {
       result.mode = arg.replace('--mode=', '');
@@ -31,7 +32,6 @@ function parseArgs() {
       result.watch = true;
     }
   }
-
   return result;
 }
 
@@ -53,9 +53,7 @@ const config = {
   sourcemap: !isProd,
   target: ['es2020'],
   entryNames: '[name]',
-  loader: {
-    '.css': 'css',
-  },
+  loader: { '.css': 'css' },
   plugins: [
     htmlPlugin({
       files: [
@@ -80,9 +78,7 @@ async function copyStatic() {
   const assetDir = 'src/assets';
   const assets = await fs.readdir(assetDir);
   for (const asset of assets) {
-    const src = path.join(assetDir, asset);
-    const dest = path.join('chrome/', asset);
-    await fs.copy(src, dest, { overwrite: true });
+    await fs.copy(path.join(assetDir, asset), path.join('chrome/', asset), { overwrite: true });
   }
 }
 
@@ -93,31 +89,45 @@ async function watchHtml(ctx) {
     persistent: true,
     depth: 99,
   });
-  await ctx.rebuild();
-  console.log('[watch] build finished, watching for changes...');
+
+  try {
+    await ctx.rebuild();
+    console.log('[watch] build finished, watching for changes...');
+  } catch {
+    console.error('[watch] build failed');
+  }
+
   watcher
-    .on('ready', () => console.log('[watch] build finished, watching for changes...'))
-    .on('change', async (file) => {
+    .on('ready', () => console.log('[watch] watching for changes...'))
+    .on('change', async file => {
       console.log(`[watch] build started (change: "${file}")`);
-      await copyStatic();
-      await ctx.rebuild();
-      console.log('[watch] build finished, watching for changes...');
+      try {
+        await copyStatic();
+        await ctx.rebuild();
+        console.log('[watch] build finished, watching for changes...');
+      } catch {
+        console.error('[watch] build failed');
+      }
     })
-    .on('error', (err) => console.error('[watch]', err));
+    .on('error', err => console.error('[watch]', err));
 }
 
 async function run() {
   await copyStatic();
-
   if (watch) {
     const ctx = await context(config);
     await watchHtml(ctx);
   } else {
-    await build(config);
+    try {
+      await build(config);
+    } catch {
+      console.error('build failed');
+      process.exit(1);
+    }
   }
 }
 
-run().catch((err) => {
+run().catch(err => {
   console.error(err);
   process.exit(1);
 });

@@ -1,79 +1,128 @@
-import { FONTS_CDN_URL } from './lib/constants';
 import { waitForClass } from './lib/dom';
 import { EditorSettings } from './types/extension';
+import {
+  FONTS_CACHE_NAME,
+  SETTINGS_REQUEST_INTERVAL,
+  SETTINGS_REQUEST_TIMEOUT,
+} from './lib/constants';
 
-const link = document.createElement('link');
-link.rel = 'preconnect';
-link.href = 'https://cdn.jsdelivr.net';
-link.crossOrigin = 'anonymous';
-document.head.appendChild(link);
-
-(async () => {
-  const url = FONTS_CDN_URL + '/fonts.json?update=' + Date.now();
-  try {
-    const response = await fetch(manifestUrl);
-    const fontNames: string[] = await response.json();
-    const style = document.createElement('style');
-    style.textContent = fontNames
-      .map(
-        (name) => `
-        @font-face {
-          font-family: '${name}';
-          src: url('${FONTS_CDN_URL}/${name}.ttf?update=${Date.now()}') format('truetype');
-          font-weight: 400;
-          font-style: normal;
-          font-display: swap;
-        }
-      `,
-      )
-      .join('\n');
-    document.head.appendChild(style);
-  } catch (error) {
-    console.error('Failed to load font manifest or fonts:', error);
+async function loadEditorFont(fontFamily: string): Promise<void> {
+  if (!fontFamily || fontFamily === 'default') {
+    return;
   }
-})();
+  const id = fontFamily.toLowerCase().replace(/ /g, '');
+  if (document.getElementById(id)) return;
+  const url = `https://fonts.bunny.net/css2?family=${encodeURIComponent(fontFamily)}:wght@400&display=swap`;
+  let css: string;
+  try {
+    const cache = await caches.open(FONTS_CACHE_NAME);
+    let response = await cache.match(url);
+    if (!response || !response.ok) {
+      const fresh = await fetch(url);
+      if (!fresh.ok) throw new Error(`Bunny Fonts returned ${fresh.status}`);
+      cache.put(url, fresh.clone());
+      response = fresh;
+    }
+    css = await response.text();
+  } catch (error) {
+    console.warn('[loadEditorFont] Failed to load font, falling back to system monospace:', error);
+    return;
+  }
+  css = css.trim();
+  if (!css) {
+    console.warn('[loadEditorFont] Empty CSS response for font:', fontFamily);
+    return;
+  }
+  const style = document.createElement('style');
+  style.id = id;
+  style.textContent = css;
+  document.head.appendChild(style);
+}
 
 type Ace = typeof ace;
 let _ace: Ace;
 let editor: AceAjax.Editor;
 let settings: EditorSettings = {};
 
+let mainContent: HTMLDivElement | null = null;
+let mainContentChild: HTMLDivElement | null = null;
+let scratchpadWrapOuter: HTMLDivElement | null = null;
+let scratchpadWrapOuterChild: HTMLDivElement | null = null;
+let scratchpadWrap: HTMLDivElement | null = null;
+let slimCursorStyle: HTMLStyleElement | null = null;
+
+function cacheDOMReferences(): void {
+  mainContent = document.getElementById('main-content') as HTMLDivElement;
+  mainContentChild = mainContent?.children[0] as HTMLDivElement;
+  scratchpadWrapOuter = document.getElementsByClassName(
+    'scratchpad-wrap-outer',
+  )[0] as HTMLDivElement;
+  scratchpadWrapOuterChild = scratchpadWrapOuter?.children[0] as HTMLDivElement;
+  scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
+
+  slimCursorStyle = document.createElement('style');
+  slimCursorStyle.setAttribute('data-slim-cursor', 'true');
+  slimCursorStyle.textContent = `
+    .ace_cursor {
+      border-left-width: 1px !important;
+      margin-left: -0.5px !important;
+    }
+  `;
+}
+
 function isNewProgramURL(url: string) {
   return /^https:\/\/www\.khanacademy\.org\/(computer-programming|cs)\/new\/[^/]+$/.test(url);
 }
 
-async function fetchExtensionSettings() {
-  return new Promise((resolve) => {
+async function fetchExtensionSettings(): Promise<void> {
+  return new Promise(resolve => {
     const listener = (event: MessageEvent) => {
       if (event.data.type === 'EDITOR_SETTINGS') {
         window.removeEventListener('message', listener);
-        resolve(true);
+        clearInterval(interval);
+        clearTimeout(timeout);
+        resolve();
       }
     };
+
     window.addEventListener('message', listener);
+
+    const interval = setInterval(() => {
+      window.postMessage({ type: 'EDITOR_SETTINGS_REQUEST' }, '*');
+    }, SETTINGS_REQUEST_INTERVAL);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      window.removeEventListener('message', listener);
+      console.warn('[fetchExtensionSettings] Timed out waiting for editor settings');
+      resolve();
+    }, SETTINGS_REQUEST_TIMEOUT);
+
     window.postMessage({ type: 'EDITOR_SETTINGS_REQUEST' }, '*');
   });
 }
 
-window.addEventListener('message', (event) => {
+window.addEventListener('message', event => {
   if (event.source !== window) return;
-  switch (event.data.type) {
-    case 'EDITOR_SETTINGS':
-      settings = event.data.settings;
-      updateEditorSettings();
-      break;
+  if (event.data.type === 'EDITOR_SETTINGS') {
+    settings = event.data.settings;
+    updateEditorSettings();
   }
 });
 
 let allowEditorSettingsOverride = false;
-async function updateEditorSettings() {
+
+async function updateEditorSettings(): Promise<void> {
   if (!editor || !settings) return;
+
+  await loadEditorFont(settings.fontFamily ?? 'default', settings.fontKey ?? '');
+
   allowEditorSettingsOverride = true;
   editor.setOptions({
-    fontSize: `${parseInt(settings.fontSize ?? '14')}px`,
+    fontSize: `${parseInt(settings.fontSize ?? '14', 10)}px`,
     fontFamily:
       settings.fontFamily && settings.fontFamily !== 'default'
-        ? `${settings.fontFamily}, 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`
+        ? `'${settings.fontFamily}', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`
         : `'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`,
     theme: `ace/theme/${settings.theme ?? 'textmate'}`,
     wrap: settings.wrap ?? true,
@@ -86,53 +135,43 @@ async function updateEditorSettings() {
   });
   allowEditorSettingsOverride = false;
 
-  document.querySelectorAll('style[data-slim-cursor]').forEach((el) => el.remove());
   if (settings.slimCursor) {
-    const style = document.createElement('style');
-    style.textContent = `
-      .ace_cursor {
-        border-left-width: 1px !important;
-        margin-left: -0.5px !important;
-      }
-    `;
-    style.setAttribute('data-slim-cursor', 'true');
-    document.head.appendChild(style);
+    if (!slimCursorStyle?.isConnected) {
+      document.head.appendChild(slimCursorStyle!);
+    }
+  } else {
+    slimCursorStyle?.remove();
   }
 
   const session = editor.getSession();
   session.setOptions({
     useSoftTabs: settings.useSoftTabs ?? true,
-    tabSize: parseInt(settings.tabSize ?? '2'),
+    tabSize: parseInt(settings.tabSize ?? '2', 10),
   });
 
   editor.container.style.lineHeight = settings.lineHeight || 'normal';
 
-  if (settings.wideEditor) {
-    const main = document.getElementById('main-content') as HTMLDivElement;
-    const child = main.children[0] as HTMLDivElement;
-    child.style.margin = '0';
-    const scratchpadWrapOuter = document.getElementsByClassName('scratchpad-wrap-outer')[0] as HTMLDivElement;
-    scratchpadWrapOuter.style.margin = '0';
-    const wrapOuterChild = scratchpadWrapOuter.children[0] as HTMLDivElement;
-    wrapOuterChild.style.margin = '0';
-    const scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
-    scratchpadWrap.style.width = '100vw';
-  } else {
-    const main = document.getElementById('main-content') as HTMLDivElement;
-    const child = main.children[0] as HTMLDivElement;
-    child.style.margin = '';
-
-    const scratchpadWrapOuter = document.getElementsByClassName('scratchpad-wrap-outer')[0] as HTMLDivElement;
-    scratchpadWrapOuter.style.margin = '';
-
-    const wrapOuterChild = scratchpadWrapOuter.children[0] as HTMLDivElement;
-    wrapOuterChild.style.margin = '';
-
-    const scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
-    scratchpadWrap.style.width = '';
+  if (
+    mainContent &&
+    mainContentChild &&
+    scratchpadWrapOuter &&
+    scratchpadWrapOuterChild &&
+    scratchpadWrap
+  ) {
+    if (settings.wideEditor) {
+      mainContentChild.style.margin = '0';
+      scratchpadWrapOuter.style.margin = '0';
+      scratchpadWrapOuterChild.style.margin = '0';
+      scratchpadWrap.style.width = '100vw';
+    } else {
+      mainContentChild.style.margin = '';
+      scratchpadWrapOuter.style.margin = '';
+      scratchpadWrapOuterChild.style.margin = '';
+      scratchpadWrap.style.width = '';
+    }
+    editor.resize();
   }
 
-  editor.renderer.updateFontSize();
   editor.renderer.updateCursor();
 }
 
@@ -148,21 +187,24 @@ Object.defineProperty(window, 'ace', {
   },
   set(value: Ace) {
     _ace = value;
-    waitForClass('ace_editor').then((elements) => {
+    waitForClass('scratchpad-ace-editor').then(elements => {
       (_ace as unknown as AceConfig).config.set(
         'themePath',
         'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
       );
-      const editorElement = <HTMLDivElement>elements[0];
+      const editorElement = elements[0] as HTMLDivElement;
       editor = _ace.edit(editorElement);
+
+      cacheDOMReferences();
+
       const originalSetFontSize = editor.setFontSize.bind(editor);
       editor.setFontSize = function (size) {
-        if (!allowEditorSettingsOverride) {
-          return;
-        }
+        if (!allowEditorSettingsOverride) return;
         return originalSetFontSize(size);
       };
+
       fetchExtensionSettings();
+
       if (isNewProgramURL(window.location.href)) {
         const programType = window?.location?.pathname?.split('/')?.[3]?.toLowerCase();
         if (!programType) return;
@@ -192,9 +234,12 @@ Object.defineProperty(window, 'ace', {
         }
         editor.selection.on('changeCursor', saveProgram);
         editor.on('change', saveProgram);
-        document.body.addEventListener('mouseup', (e) => {
+        document.body.addEventListener('mouseup', e => {
           const target = e.target as HTMLElement;
-          if (target.textContent?.trim() === 'Save' && !!target.closest('.modal, .dialog, .popup, [role="dialog"]')) {
+          if (
+            target.textContent?.trim() === 'Save' &&
+            !!target.closest('.modal, .dialog, .popup, [role="dialog"]')
+          ) {
             window.removeEventListener('beforeunload', saveProgram);
             saveBeforeUnload = false;
             localStorage.removeItem(cacheName);

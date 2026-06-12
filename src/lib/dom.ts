@@ -1,5 +1,5 @@
 function observeUntil<T>(check: () => T | null | undefined): Promise<T> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const result = check();
     if (result) return resolve(result);
     const observer = new MutationObserver(() => {
@@ -21,4 +21,5 @@ export const waitForClass = (className: string) =>
     return els.length ? Array.from(els) : null;
   });
 
-export const waitForSelector = (selector: string) => observeUntil(() => document.querySelector(selector));
+export const waitForSelector = (selector: string) =>
+  observeUntil(() => document.querySelector(selector));

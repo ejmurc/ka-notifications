@@ -84,7 +84,7 @@ type ResponseFeedbackNotification = BaseReadableNotification & {
   feedbackIsQuestion?: boolean;
   feedbackIsReply?: boolean;
   authorNickname: string;
-  translatedFocusTitle: string;
+  focusTranslatedTitle: string;
   content: string | null | undefined;
 };
 

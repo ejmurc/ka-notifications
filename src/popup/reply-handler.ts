@@ -2,14 +2,11 @@ import { getFeedback, addFeedback, getAuthToken } from '../lib/api';
 import type { FeedbackQueryResponse, FeedbackType } from '../types/api';
 
 export function addReplyButtonEventListeners(): void {
-  const replyButtons = document.getElementsByClassName('add-listeners') as HTMLCollectionOf<HTMLButtonElement>;
-
-  for (let i = replyButtons.length; i--; ) {
-    const btn = replyButtons[i];
-    if (!btn) continue;
+  const replyButtons = document.querySelectorAll<HTMLButtonElement>('.add-listeners');
+  replyButtons.forEach(btn => {
     btn.onclick = handleReplyButtonClick;
-    btn.className = 'notification-feedback-button';
-  }
+    btn.classList.replace('add-listeners', 'notification-feedback-button');
+  });
 }
 
 function handleReplyButtonClick(event: MouseEvent): void {
@@ -34,7 +31,7 @@ function handleReplyButtonClick(event: MouseEvent): void {
 
 function handleTextareaInput(textarea: HTMLTextAreaElement, btn: HTMLButtonElement): void {
   textarea.style.height = '0';
-  textarea.style.height = `${textarea.scrollHeight + 2}px`;
+  textarea.style.height = `${textarea.scrollHeight}px`;
   btn.textContent = textarea.value.length === 0 ? 'Cancel' : 'Send';
 }
 
@@ -66,19 +63,25 @@ async function sendMessage(event: MouseEvent): Promise<void> {
   btn.disabled = true;
   textarea.disabled = true;
 
+  const { url, typename, feedbacktype } = btn.dataset;
+
   const handleError = (msg: string) => {
     console.error('Error sending message:', msg);
-    textarea.value = `Error: ${msg}`;
-    btn.textContent = 'Error';
+    textarea.disabled = false;
+    textarea.value = message;
+    btn.disabled = false;
+    btn.textContent = msg;
+    btn.title = msg;
   };
 
   try {
     const token = await getAuthToken();
     if (!token) return handleError('Missing or expired auth token');
 
-    const { url, typename, feedbacktype } = btn.dataset;
     if (!url || !typename || !feedbacktype)
-      return handleError(`Invalid button dataset (url=${url}, typename=${typename}, feedbacktype=${feedbacktype})`);
+      return handleError(
+        `Invalid button dataset (url=${url}, typename=${typename}, feedbacktype=${feedbacktype})`,
+      );
 
     // narrow feedbacktype to the FeedbackType union
     if (!isFeedbackType(feedbacktype)) return handleError(`Invalid feedback type: ${feedbacktype}`);
@@ -88,10 +91,13 @@ async function sendMessage(event: MouseEvent): Promise<void> {
     if (!qaExpandKey) return handleError('Missing qa_expand_key in URL params');
 
     const [parentFeedbackType, childFeedbackType] = getFeedbackTypes(typename, feedbacktype);
-    if (!parentFeedbackType || !childFeedbackType) return handleError('Unrecognized notification type');
+    if (!parentFeedbackType || !childFeedbackType)
+      return handleError('Unrecognized notification type');
 
     const topicId = extractTopicId(url);
     if (!topicId) return handleError('Failed to parse topicId from URL');
+
+    console.log(topicId, parentFeedbackType, qaExpandKey);
 
     const parentFeedbackJSON: FeedbackQueryResponse | undefined = await getFeedback({
       topicId,
@@ -101,7 +107,9 @@ async function sendMessage(event: MouseEvent): Promise<void> {
       focusKind: 'scratchpad',
     });
 
-    const feedbackData = (parentFeedbackJSON as any)?.feedback?.feedback?.[0];
+    console.log(parentFeedbackJSON);
+
+    const feedbackData = (parentFeedbackJSON as any)?.data?.feedback?.feedback?.[0];
     if (!feedbackData) return handleError('Unsupported feedback structure');
 
     const parentKey =
@@ -122,7 +130,8 @@ async function sendMessage(event: MouseEvent): Promise<void> {
     if (!success) return handleError('Failed to send message');
 
     btn.textContent = 'Success!';
-    setTimeout(() => resetActiveReply(textarea), 3000);
+    textarea.value = '';
+    setTimeout(() => resetActiveReply(textarea), 2000);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     handleError(msg);
