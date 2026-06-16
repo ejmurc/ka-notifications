@@ -17,11 +17,11 @@ export function parseMarkdown(text: string): string {
   }
   text = text.replace(
     /https?:\/\/\S+/g,
-    url => `<a class="notification-link" href="${url}" target="_blank">${url}</a>`,
+    url => `<a class="hyperlink" href="${url}" target="_blank">${url}</a>`,
   );
   text = text.replace(
     /@([a-zA-Z][a-zA-Z\d]{0,39})/g,
-    '<a class="notification-link" href="https://www.khanacademy.org/profile/$1" target="_blank">@$1</a>',
+    '<a class="hyperlink" href="https://www.khanacademy.org/profile/$1" target="_blank">@$1</a>',
   );
   text = text.replace(/\x00CB(\d+)\x00/g, (_, i) => `<pre><code>${codeBlocks[+i]}</code></pre>`);
   text = text.replace(/\x00CI(\d+)\x00/g, (_, i) => `<code>${codeInlines[+i]}</code>`);

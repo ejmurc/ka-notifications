@@ -1,4 +1,5 @@
 import { waitForId, waitForSelector } from './lib/dom';
+import { EditorSettings } from './types/extension';
 
 const pathSegments = window.location.pathname.split('/');
 const isComputerSciencePage =
@@ -14,20 +15,20 @@ async function initializeContentScript(): Promise<void> {
     }
   });
 
-  function getTabSelectorForExpandType(expandType: string | null): string {
+  function getTabIdForExpandType(expandType: string | null): string {
     switch (expandType) {
       case 'question':
       case 'answer':
-        return 'button[data-testid=questions]';
+        return 'questions-tab';
       case 'project_help_question':
-        return 'button[data-testid=projecthelp]';
+        return 'projecthelp-tab';
       default:
-        return 'button[data-testid=comments]';
+        return 'comments-tab';
     }
   }
 
   function attachEditorSettingsSync(): void {
-    const postEditorSettings = (settings: any) => {
+    const postEditorSettings = (settings: EditorSettings) => {
       window.postMessage({ type: 'EDITOR_SETTINGS', settings }, '*');
     };
 
@@ -53,11 +54,12 @@ async function initializeContentScript(): Promise<void> {
   }
 
   if (isComputerSciencePage && /^\d{16}$/.test(projectId || '')) {
+    console.log('hi');
     injectScriptFile('fetch-override.js');
 
     const expandType = new URLSearchParams(location.search).get('qa_expand_type');
-    const tabSelector = getTabSelectorForExpandType(expandType);
-    const qaTabElement = await waitForSelector(tabSelector);
+    const tabId = getTabIdForExpandType(expandType);
+    const qaTabElement = await waitForId(tabId);
 
     if (qaTabElement instanceof HTMLButtonElement) {
       qaTabElement.click();
@@ -65,9 +67,11 @@ async function initializeContentScript(): Promise<void> {
       const { defaultCommentSort = 'Top Voted' } =
         await chrome.storage.local.get('defaultCommentSort');
       const sortButton = await waitForId('sortBy');
+      console.log(sortButton);
       if (sortButton instanceof HTMLButtonElement) {
         sortButton.click();
         const dropdown = await waitForSelector("div[data-testid='dropdown-popper']");
+        console.log(dropdown);
         const sortButtons = dropdown.getElementsByTagName('button');
 
         for (const button of sortButtons) {
@@ -91,9 +95,13 @@ async function initializeContentScript(): Promise<void> {
       }
     }
 
+    console.log('got through qa');
+
     attachEditorSettingsSync();
+    console.log('injecting ace override');
     injectScriptFile('ace-override.js');
   } else if (isComputerSciencePage && pathSegments[2] === 'new') {
+    console.log('injecting ace override 2');
     attachEditorSettingsSync();
     injectScriptFile('ace-override.js');
   }

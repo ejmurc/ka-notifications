@@ -8,9 +8,15 @@ export function setupNotificationsList(store: AppStore) {
   let loading = false;
   let initialRender = true;
 
-  store.subscribe(['notificationCursor'], ({ notificationCursor }) => {
-    cursor = notificationCursor ?? '';
-  });
+  store.subscribe(
+    ['notificationCursor'],
+    ({ notificationCursor }) => {
+      cursor = notificationCursor ?? '';
+      const spinner = document.getElementById('notifications-spinner');
+      if (!notificationCursor && spinner) spinner.style.display = 'none';
+    },
+    { immediate: false },
+  );
 
   store.subscribe(['notifications'], ({ notifications }) => {
     const list = document.getElementById('notifications-list');
@@ -42,6 +48,8 @@ export function setupNotificationsList(store: AppStore) {
       addReplyButtonEventListeners();
     }
     if (!cursor) document.body.removeEventListener('scroll', onScroll);
+    const spinner = document.getElementById('notifications-spinner');
+    if (!cursor && spinner) spinner.style.display = 'none';
   };
 
   document.body.addEventListener('scroll', onScroll);

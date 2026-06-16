@@ -16,5 +16,5 @@ function runCommand(command, message) {
 
 runCommand('npm run lint', 'Linting');
 runCommand('npm run format', 'Formatting');
-runCommand('npm run build', 'Building Chrome package');
+runCommand('npm run prod', 'Building Chrome package');
 runCommand('node scripts/zip-extension.mjs', 'Zipping package');

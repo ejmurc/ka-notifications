@@ -1,6 +1,7 @@
 import type { StorageData } from '../types/extension';
 
 export const defaults: StorageData = {
+  aceThemes: [],
   authenticated: false,
   notifications: [],
   notificationCursor: '',

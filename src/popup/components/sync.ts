@@ -15,6 +15,8 @@ export function setupSync(store: Store<StorageData>): void {
     if (btn.disabled) return;
     btn.classList.add('spinning');
     btn.disabled = true;
+    const spinner = document.getElementById('notifications-spinner');
+    if (spinner) spinner.style.display = 'block';
     try {
       await Promise.all([syncNotifications(store), syncUserProfile(store)]);
     } finally {
@@ -43,9 +45,8 @@ async function syncNotifications(store: Store<StorageData>): Promise<void> {
 
       const batch = response.notifications;
       notifications.push(...batch);
-
-      if (!response.after || batch.some(n => !n.brandNew)) break;
       after = response.after;
+      if (!response.after || batch.some(n => !n.brandNew)) break;
     } catch (error) {
       if (!isNetworkError(error)) console.error('[syncNotifications]', error);
       break;

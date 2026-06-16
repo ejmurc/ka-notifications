@@ -1,12 +1,12 @@
 {
   "name": "ka-notifications",
-  "version": "3",
+  "version": "4.0.0",
   "description": "Khan Academy Notifications, no Firefox.",
   "scripts": {
     "start": "node scripts/build.mjs --mode=development --watch",
     "dev": "node scripts/build.mjs --mode=development",
     "prod": "node scripts/build.mjs --mode=production",
-    "lint": "eslint src/ts/*.ts src/utils/*.ts",
+    "lint": "eslint src/**.ts",
     "format": "prettier --write \"src/**/*.(ts|css|html)\" \"src/manifest.json\" \"scripts/**\"",
     "release": "node scripts/release.mjs"
   },

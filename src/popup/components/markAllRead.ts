@@ -3,7 +3,7 @@ import { clearBrandNewNotifications } from '../../lib/api/notifications';
 import { StorageManager } from '../../lib/storage';
 
 export function setupMarkAllRead(): void {
-  const markAllRead = document.getElementById('markAllRead');
+  const markAllRead = document.getElementById('mark-all-read');
   if (!markAllRead || markAllRead.disabled) return;
   markAllRead.addEventListener('click', async () => {
     markAllRead.disabled = true;
@@ -11,6 +11,7 @@ export function setupMarkAllRead(): void {
     if (!token) return;
     const success = await clearBrandNewNotifications(token);
     if (!success) return;
+    chrome.action.setBadgeText({ text: '' });
     markAllRead.disabled = false;
   });
 }

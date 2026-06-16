@@ -24,6 +24,7 @@ export type EditorSettings = {
 };
 
 export type StorageData = {
+  aceThemes: string[];
   authenticated: boolean;
   notifications: KhanAcademyNotification[];
   notificationCursor: string;

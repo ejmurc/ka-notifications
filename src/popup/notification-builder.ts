@@ -271,7 +271,6 @@ function buildMasteryGoalDueDateApproaching(
 }
 
 export function createNotificationString(n: KhanAcademyNotification): string {
-  console.log(n);
   if (isResponseFeedbackNotification(n)) return buildResponseFeedback(n);
   if (isProgramFeedbackNotification(n)) return buildProgramFeedback(n);
   if (isAvatarNotification(n)) return buildAvatar(n);

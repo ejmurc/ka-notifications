@@ -9,19 +9,6 @@ import chokidar from 'chokidar';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const aceDir = path.resolve(__dirname, '..', 'node_modules/ace-builds/src-min-noconflict');
-const themeFiles = readdirSync(aceDir).filter(
-  file => /^theme-.*\.js$/.test(file) && !file.includes('kr_theme.js'),
-);
-const themeNames = themeFiles.map(file => file.replace(/^theme-/, '').replace(/\.js$/, ''));
-
-const generatedDir = path.resolve(__dirname, '..', 'src/generated');
-mkdirSync(generatedDir, { recursive: true });
-writeFileSync(
-  path.join(generatedDir, 'themes.ts'),
-  `export const themes = ${JSON.stringify(themeNames, null, 2)};\n`,
-);
-
 function parseArgs() {
   const args = process.argv.slice(2);
   const result = { mode: 'development', watch: false };

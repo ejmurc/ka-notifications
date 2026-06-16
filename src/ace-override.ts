@@ -6,13 +6,17 @@ import {
   SETTINGS_REQUEST_TIMEOUT,
 } from './lib/constants';
 
-async function loadEditorFont(fontFamily: string): Promise<void> {
-  if (!fontFamily || fontFamily === 'default') {
-    return;
-  }
-  const id = fontFamily.toLowerCase().replace(/ /g, '');
+interface WindowWithAce extends Window {
+  ace?: Ace;
+}
+
+async function loadEditorFont(fontFamily: string, fontKey: string): Promise<void> {
+  if (!fontFamily || fontFamily === 'default' || !fontKey) return;
+
+  const id = `bunny-font-${fontKey}`;
   if (document.getElementById(id)) return;
-  const url = `https://fonts.bunny.net/css2?family=${encodeURIComponent(fontFamily)}:wght@400&display=swap`;
+
+  const url = `https://fonts.bunny.net/css?family=${fontKey}`;
   let css: string;
   try {
     const cache = await caches.open(FONTS_CACHE_NAME);
@@ -28,11 +32,13 @@ async function loadEditorFont(fontFamily: string): Promise<void> {
     console.warn('[loadEditorFont] Failed to load font, falling back to system monospace:', error);
     return;
   }
+
   css = css.trim();
   if (!css) {
     console.warn('[loadEditorFont] Empty CSS response for font:', fontFamily);
     return;
   }
+
   const style = document.createElement('style');
   style.id = id;
   style.textContent = css;
@@ -51,14 +57,18 @@ let scratchpadWrapOuterChild: HTMLDivElement | null = null;
 let scratchpadWrap: HTMLDivElement | null = null;
 let slimCursorStyle: HTMLStyleElement | null = null;
 
-function cacheDOMReferences(): void {
+async function cacheDOMReferences(): Promise<void> {
   mainContent = document.getElementById('main-content') as HTMLDivElement;
   mainContentChild = mainContent?.children[0] as HTMLDivElement;
-  scratchpadWrapOuter = document.getElementsByClassName(
-    'scratchpad-wrap-outer',
-  )[0] as HTMLDivElement;
+
+  const [wrapOuterEls, wrapEls] = await Promise.all([
+    waitForClass('scratchpad-wrap-outer'),
+    waitForClass('scratchpad-wrap'),
+  ]);
+
+  scratchpadWrapOuter = wrapOuterEls[0] as HTMLDivElement;
   scratchpadWrapOuterChild = scratchpadWrapOuter?.children[0] as HTMLDivElement;
-  scratchpadWrap = document.getElementsByClassName('scratchpad-wrap')[0] as HTMLDivElement;
+  scratchpadWrap = wrapEls[0] as HTMLDivElement;
 
   slimCursorStyle = document.createElement('style');
   slimCursorStyle.setAttribute('data-slim-cursor', 'true');
@@ -181,71 +191,84 @@ interface AceConfig {
   };
 }
 
+async function onAceSet(): Promise<void> {
+  const elements = await waitForClass('scratchpad-ace-editor');
+  (_ace as unknown as AceConfig).config.set(
+    'themePath',
+    'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
+  );
+
+  const editorElement = elements[0] as HTMLDivElement;
+  editor = _ace.edit(editorElement);
+  await cacheDOMReferences();
+
+  const originalSetFontSize = editor.setFontSize.bind(editor);
+  editor.setFontSize = function (size) {
+    if (!allowEditorSettingsOverride) return;
+    return originalSetFontSize(size);
+  };
+
+  await fetchExtensionSettings();
+
+  if (isNewProgramURL(window.location.href)) {
+    const programType = window?.location?.pathname?.split('/')?.[3]?.toLowerCase();
+    if (!programType) return;
+    const cacheName = `__khanacademy_new_${programType}_cache__`;
+    const cache = localStorage.getItem(cacheName);
+    if (cache) {
+      try {
+        const { content, cursor } = JSON.parse(cache);
+        editor.session.setValue(content);
+        editor.moveCursorToPosition(cursor);
+        editor.renderer.scrollCursorIntoView();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    editor.focus();
+    let saveBeforeUnload = false;
+    function saveProgram() {
+      if (!saveBeforeUnload) window.addEventListener('beforeunload', saveProgram);
+      const content = editor.getValue();
+      const cursor = editor.getCursorPosition();
+      if (content.length === 0) {
+        localStorage.removeItem(cacheName);
+      } else {
+        localStorage.setItem(cacheName, JSON.stringify({ content, cursor }));
+      }
+    }
+    editor.selection.on('changeCursor', saveProgram);
+    editor.on('change', saveProgram);
+    document.body.addEventListener('mouseup', e => {
+      const target = e.target as HTMLElement;
+      if (
+        target.textContent?.trim() === 'Save' &&
+        !!target.closest('.modal, .dialog, .popup, [role="dialog"]')
+      ) {
+        window.removeEventListener('beforeunload', saveProgram);
+        saveBeforeUnload = false;
+        localStorage.removeItem(cacheName);
+      }
+    });
+  }
+}
+
+const descriptor = Object.getOwnPropertyDescriptor(window, 'ace');
+if (!descriptor || descriptor.configurable) {
+  delete (window as WindowWithAce).ace;
+}
+
 Object.defineProperty(window, 'ace', {
   get() {
     return _ace;
   },
   set(value: Ace) {
     _ace = value;
-    waitForClass('scratchpad-ace-editor').then(elements => {
-      (_ace as unknown as AceConfig).config.set(
-        'themePath',
-        'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
-      );
-      const editorElement = elements[0] as HTMLDivElement;
-      editor = _ace.edit(editorElement);
-
-      cacheDOMReferences();
-
-      const originalSetFontSize = editor.setFontSize.bind(editor);
-      editor.setFontSize = function (size) {
-        if (!allowEditorSettingsOverride) return;
-        return originalSetFontSize(size);
-      };
-
-      fetchExtensionSettings();
-
-      if (isNewProgramURL(window.location.href)) {
-        const programType = window?.location?.pathname?.split('/')?.[3]?.toLowerCase();
-        if (!programType) return;
-        const cacheName = `__khanacademy_new_${programType}_cache__`;
-        const cache = localStorage.getItem(cacheName);
-        if (cache) {
-          try {
-            const { content, cursor } = JSON.parse(cache);
-            editor.session.setValue(content);
-            editor.moveCursorToPosition(cursor);
-            editor.renderer.scrollCursorIntoView();
-          } catch (error) {
-            console.error(error);
-          }
-        }
-        editor.focus();
-        let saveBeforeUnload = false;
-        function saveProgram() {
-          if (!saveBeforeUnload) window.addEventListener('beforeunload', saveProgram);
-          const content = editor.getValue();
-          const cursor = editor.getCursorPosition();
-          if (content.length === 0) {
-            localStorage.removeItem(cacheName);
-          } else {
-            localStorage.setItem(cacheName, JSON.stringify({ content, cursor }));
-          }
-        }
-        editor.selection.on('changeCursor', saveProgram);
-        editor.on('change', saveProgram);
-        document.body.addEventListener('mouseup', e => {
-          const target = e.target as HTMLElement;
-          if (
-            target.textContent?.trim() === 'Save' &&
-            !!target.closest('.modal, .dialog, .popup, [role="dialog"]')
-          ) {
-            window.removeEventListener('beforeunload', saveProgram);
-            saveBeforeUnload = false;
-            localStorage.removeItem(cacheName);
-          }
-        });
-      }
-    });
+    onAceSet();
   },
 });
+
+if (existingAce) {
+  _ace = existingAce;
+  onAceSet();
+}

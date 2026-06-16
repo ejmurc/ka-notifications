@@ -13,6 +13,9 @@ import { setupTheme } from './components/theme';
 import { setupMarkAllRead } from './components/markAllRead';
 import { setupSelectDropdown } from './components/selectDropdown';
 import { setupNotificationsList } from './components/notificationsList';
+import { setupFontFamily } from './components/setupFontFamily';
+import { setupEditorSettings } from './components/editorSettings';
+import { setupThemeSelect } from './components/themeSelect';
 import { onThemeChanged } from './theme';
 import { StorageManager } from '../lib/storage';
 import type { StorageData } from '../types/extension';
@@ -73,6 +76,9 @@ async function main() {
   setupTheme(store);
   setupMarkAllRead();
   setupNotificationsList(store);
+  setupFontFamily(store);
+  setupEditorSettings(store);
+  setupThemeSelect(store);
 }
 
 main();

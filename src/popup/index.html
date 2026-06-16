@@ -92,7 +92,9 @@
     </ul>
     <main id="notifications-view">
       <ul id="notifications-list"></ul>
-      <div class="notifications-spinner-container"><div class="spinner"></div></div>
+      <div class="notifications-spinner-container">
+        <div id="notifications-spinner" class="spinner"></div>
+      </div>
     </main>
     <div id="modal-backdrop"></div>
     <dialog id="settings-modal" class="hidden">
@@ -112,6 +114,7 @@
           </svg>
         </button>
       </div>
+
       <div class="settings-group-title">Appearance</div>
       <div class="settings-group">
         <div class="settings-row">
@@ -130,7 +133,7 @@
           </div>
           <div class="dropdown-select" id="subtitle-select">
             <button class="dropdown-select-trigger" id="subtitle-select-trigger">
-              <span class="dropdown-select-value">Energy points</span>
+              <span class="dropdown-select-value">Energy Points</span>
               <svg
                 class="dropdown-icon"
                 xmlns="http://www.w3.org/2000/svg"
@@ -151,6 +154,7 @@
           </div>
         </div>
       </div>
+
       <div class="settings-group-title">Editor</div>
       <div class="settings-group">
         <div class="settings-row">
@@ -158,7 +162,7 @@
             <span class="label">Font Family</span>
           </div>
           <div class="dropdown-select" id="font-family-select">
-            <button class="dropdown-select-trigger" id="subtitle-select-trigger">
+            <button class="dropdown-select-trigger" id="font-family-select-trigger">
               <span class="dropdown-select-value">Default</span>
               <svg
                 class="dropdown-icon"
@@ -171,12 +175,199 @@
                 <path d="M480-360 280-560h400L480-360Z" />
               </svg>
             </button>
-            <ul class="dropdown-select-menu hidden" id="font-family-select-menu">
-              <li><button class="dropdown-item" data-value="points">Energy Points</button></li>
-              <li><button class="dropdown-item" data-value="badges">Badges</button></li>
-              <li><button class="dropdown-item" data-value="streak">Streak</button></li>
-              <li><button class="dropdown-item" data-value="none">None</button></li>
+            <ul class="dropdown-select-menu hidden" id="font-family-select-menu"></ul>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span class="label">Font Size</span>
+          </div>
+          <div class="dropdown-select">
+            <button class="dropdown-select-trigger" id="font-size-select-trigger">
+              <span class="dropdown-select-value">14</span>
+              <svg
+                class="dropdown-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                height="16px"
+                viewBox="0 -960 960 960"
+                width="16px"
+                fill="currentColor"
+              >
+                <path d="M480-360 280-560h400L480-360Z" />
+              </svg>
+            </button>
+            <ul class="dropdown-select-menu hidden" id="font-size-select-menu">
+              <li><button class="dropdown-item" data-value="10">10</button></li>
+              <li><button class="dropdown-item" data-value="11">11</button></li>
+              <li><button class="dropdown-item" data-value="12">12</button></li>
+              <li><button class="dropdown-item" data-value="13">13</button></li>
+              <li><button class="dropdown-item" data-value="14">14</button></li>
+              <li><button class="dropdown-item" data-value="15">15</button></li>
+              <li><button class="dropdown-item" data-value="16">16</button></li>
+              <li><button class="dropdown-item" data-value="18">18</button></li>
+              <li><button class="dropdown-item" data-value="20">20</button></li>
+              <li><button class="dropdown-item" data-value="24">24</button></li>
             </ul>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span class="label">Theme</span>
+          </div>
+          <div class="dropdown-select">
+            <button class="dropdown-select-trigger" id="theme-select-trigger">
+              <span class="dropdown-select-value">Textmate</span>
+              <svg
+                class="dropdown-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                height="16px"
+                viewBox="0 -960 960 960"
+                width="16px"
+                fill="currentColor"
+              >
+                <path d="M480-360 280-560h400L480-360Z" />
+              </svg>
+            </button>
+            <ul class="dropdown-select-menu hidden" id="theme-select-menu"></ul>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span class="label">Tab Size</span>
+          </div>
+          <div class="dropdown-select">
+            <button class="dropdown-select-trigger" id="tab-size-select-trigger">
+              <span class="dropdown-select-value">2</span>
+              <svg
+                class="dropdown-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                height="16px"
+                viewBox="0 -960 960 960"
+                width="16px"
+                fill="currentColor"
+              >
+                <path d="M480-360 280-560h400L480-360Z" />
+              </svg>
+            </button>
+            <ul class="dropdown-select-menu hidden" id="tab-size-select-menu">
+              <li><button class="dropdown-item" data-value="2">2</button></li>
+              <li><button class="dropdown-item" data-value="4">4</button></li>
+              <li><button class="dropdown-item" data-value="8">8</button></li>
+            </ul>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span class="label">Line Height</span>
+          </div>
+          <div class="dropdown-select">
+            <button class="dropdown-select-trigger" id="line-height-select-trigger">
+              <span class="dropdown-select-value">Normal</span>
+              <svg
+                class="dropdown-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                height="16px"
+                viewBox="0 -960 960 960"
+                width="16px"
+                fill="currentColor"
+              >
+                <path d="M480-360 280-560h400L480-360Z" />
+              </svg>
+            </button>
+            <ul class="dropdown-select-menu hidden" id="line-height-select-menu">
+              <li><button class="dropdown-item" data-value="normal">Normal</button></li>
+              <li><button class="dropdown-item" data-value="1.2">Compact</button></li>
+              <li><button class="dropdown-item" data-value="1.8">Relaxed</button></li>
+              <li><button class="dropdown-item" data-value="2">Loose</button></li>
+            </ul>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="wrap-label" class="label">Word Wrap</span>
+          </div>
+          <div class="switch">
+            <input id="wrap" type="checkbox" aria-labelledby="wrap-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="show-line-numbers-label" class="label">Line Numbers</span>
+          </div>
+          <div class="switch">
+            <input
+              id="show-line-numbers"
+              type="checkbox"
+              aria-labelledby="show-line-numbers-label"
+            />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="show-gutter-label" class="label">Gutter</span>
+          </div>
+          <div class="switch">
+            <input id="show-gutter" type="checkbox" aria-labelledby="show-gutter-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="behaviours-label" class="label">Auto Pairs</span>
+            <span class="sublabel">Auto-close brackets and quotes</span>
+          </div>
+          <div class="switch">
+            <input id="behaviours" type="checkbox" aria-labelledby="behaviours-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="autocompletion-label" class="label">Autocompletion</span>
+          </div>
+          <div class="switch">
+            <input id="autocompletion" type="checkbox" aria-labelledby="autocompletion-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="slim-cursor-label" class="label">Slim Cursor</span>
+          </div>
+          <div class="switch">
+            <input id="slim-cursor" type="checkbox" aria-labelledby="slim-cursor-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="soft-tabs-label" class="label">Soft Tabs</span>
+            <span class="sublabel">Use spaces instead of tabs</span>
+          </div>
+          <div class="switch">
+            <input id="soft-tabs" type="checkbox" aria-labelledby="soft-tabs-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="indent-guides-label" class="label">Indent Guides</span>
+          </div>
+          <div class="switch">
+            <input id="indent-guides" type="checkbox" aria-labelledby="indent-guides-label" />
+            <span class="track"></span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <span id="wide-editor-label" class="label">Wide Editor</span>
+            <span class="sublabel">Expand editor to full viewport width</span>
+          </div>
+          <div class="switch">
+            <input id="wide-editor" type="checkbox" aria-labelledby="wide-editor-label" />
+            <span class="track"></span>
           </div>
         </div>
       </div>

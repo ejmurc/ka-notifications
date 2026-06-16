@@ -12,7 +12,6 @@ export async function getNotificationsForUser(
     return undefined;
   }
   const json = (await response.json()) as GetNotificationsForUserResponse;
-  console.log(json);
   const data = json?.data?.user?.notifications;
   if (!data) {
     return undefined;
