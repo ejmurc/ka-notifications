@@ -2,34 +2,11 @@ import { getNotificationsForUser } from '../../lib/api/notifications';
 import { createNotificationString } from '../notification-builder';
 import { addReplyButtonEventListeners } from '../reply-handler';
 import type { AppStore } from '../../lib/store';
+import type { StorageData } from '../../types/extension';
 
-export function setupNotificationsList(store: AppStore) {
+export async function setupNotificationsList(store: AppStore) {
   let cursor = '';
   let loading = false;
-  let initialRender = true;
-
-  store.subscribe(
-    ['notificationCursor'],
-    ({ notificationCursor }) => {
-      cursor = notificationCursor ?? '';
-      const spinner = document.getElementById('notifications-spinner');
-      if (!notificationCursor && spinner) spinner.style.display = 'none';
-    },
-    { immediate: false },
-  );
-
-  store.subscribe(['notifications'], ({ notifications }) => {
-    const list = document.getElementById('notifications-list');
-    if (!list) return;
-    if (!notifications?.length) {
-      list.innerHTML = '<li class="notification-empty">No notifications yet.</li>';
-      return;
-    }
-    if (!initialRender) return;
-    initialRender = false;
-    list.innerHTML = notifications.map(createNotificationString).join('');
-    addReplyButtonEventListeners();
-  });
 
   const onScroll = async () => {
     if (loading || !cursor) return;
@@ -51,6 +28,30 @@ export function setupNotificationsList(store: AppStore) {
     const spinner = document.getElementById('notifications-spinner');
     if (!cursor && spinner) spinner.style.display = 'none';
   };
+
+  let unsubscribe: () => void;
+  const { notifications, notificationCursor } = await new Promise(resolve => {
+    unsubscribe = store.subscribe(['notifications', 'notificationCursor'], values => {
+      if (values.notificationCursor) {
+        resolve(values);
+      }
+    });
+  });
+  unsubscribe();
+
+  cursor = notificationCursor ?? '';
+  const spinner = document.getElementById('notifications-spinner');
+  if (!cursor && spinner) spinner.style.display = 'none';
+
+  const list = document.getElementById('notifications-list');
+  if (list) {
+    if (!notifications?.length) {
+      list.innerHTML = '<li class="notification-empty">No notifications yet.</li>';
+    } else {
+      list.innerHTML = notifications.map(createNotificationString).join('');
+      addReplyButtonEventListeners();
+    }
+  }
 
   document.body.addEventListener('scroll', onScroll);
 }

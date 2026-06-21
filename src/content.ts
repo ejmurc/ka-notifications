@@ -54,7 +54,6 @@ async function initializeContentScript(): Promise<void> {
   }
 
   if (isComputerSciencePage && /^\d{16}$/.test(projectId || '')) {
-    console.log('hi');
     injectScriptFile('fetch-override.js');
 
     const expandType = new URLSearchParams(location.search).get('qa_expand_type');
@@ -67,11 +66,9 @@ async function initializeContentScript(): Promise<void> {
       const { defaultCommentSort = 'Top Voted' } =
         await chrome.storage.local.get('defaultCommentSort');
       const sortButton = await waitForId('sortBy');
-      console.log(sortButton);
       if (sortButton instanceof HTMLButtonElement) {
         sortButton.click();
         const dropdown = await waitForSelector("div[data-testid='dropdown-popper']");
-        console.log(dropdown);
         const sortButtons = dropdown.getElementsByTagName('button');
 
         for (const button of sortButtons) {
@@ -95,13 +92,9 @@ async function initializeContentScript(): Promise<void> {
       }
     }
 
-    console.log('got through qa');
-
     attachEditorSettingsSync();
-    console.log('injecting ace override');
     injectScriptFile('ace-override.js');
   } else if (isComputerSciencePage && pathSegments[2] === 'new') {
-    console.log('injecting ace override 2');
     attachEditorSettingsSync();
     injectScriptFile('ace-override.js');
   }

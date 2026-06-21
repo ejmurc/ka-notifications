@@ -253,6 +253,8 @@ async function onAceSet(): Promise<void> {
   }
 }
 
+const existingAce = (window as WindowWithAce).ace;
+
 const descriptor = Object.getOwnPropertyDescriptor(window, 'ace');
 if (!descriptor || descriptor.configurable) {
   delete (window as WindowWithAce).ace;

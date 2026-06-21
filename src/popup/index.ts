@@ -27,7 +27,10 @@ async function main() {
   const root = document.documentElement;
   root.classList.add('no-transition');
   store.subscribe(['darkTheme'], onThemeChanged);
-  void root.offsetWidth;
+  requestAnimationFrame(() => {
+    void root.offsetWidth;
+    root.classList.remove('no-transition');
+  });
   root.classList.remove('no-transition');
   store.subscribe(['authenticated', 'profileLoaded'], renderUnauthenticated);
   store.subscribe(['avatarSrc', 'nickname'], renderAvatar);

@@ -19,7 +19,7 @@ export const defaults: StorageData = {
     slimCursor: false,
     softTabs: true,
     tabSize: '2',
-    lineHeight: 'normal',
+    lineHeight: '1.0',
     displayIndentGuides: false,
     wideEditor: false,
   },
