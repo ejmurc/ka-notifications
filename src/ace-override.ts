@@ -80,7 +80,7 @@ async function cacheDOMReferences(): Promise<void> {
   `;
 }
 
-function isNewProgramURL(url: string) {
+function isNewProgramURL(url: string): boolean {
   return /^https:\/\/www\.khanacademy\.org\/(computer-programming|cs)\/new\/[^/]+$/.test(url);
 }
 
@@ -120,16 +120,14 @@ window.addEventListener('message', event => {
   }
 });
 
-let allowEditorSettingsOverride = false;
-
 async function updateEditorSettings(): Promise<void> {
   if (!editor || !settings) return;
 
   await loadEditorFont(settings.fontFamily ?? 'default', settings.fontKey ?? '');
 
-  allowEditorSettingsOverride = true;
+  editor.container.style.fontSize = `${parseInt(settings.fontSize ?? '14', 10)}px`;
+
   editor.setOptions({
-    fontSize: `${parseInt(settings.fontSize ?? '14', 10)}px`,
     fontFamily:
       settings.fontFamily && settings.fontFamily !== 'default'
         ? `'${settings.fontFamily}', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace`
@@ -143,7 +141,6 @@ async function updateEditorSettings(): Promise<void> {
     enableBasicAutocompletion: settings.enableBasicAutocompletion ?? false,
     displayIndentGuides: settings.displayIndentGuides ?? false,
   });
-  allowEditorSettingsOverride = false;
 
   if (settings.slimCursor) {
     if (!slimCursorStyle?.isConnected) {
@@ -191,28 +188,72 @@ interface AceConfig {
   };
 }
 
+function getExistingEditor(): AceAjax.Editor | null {
+  const el = document.querySelector('.ace_editor');
+  if (!el) return null;
+  const editorInstance = (el as HTMLElement & { env?: { editor?: AceAjax.Editor } }).env?.editor;
+  return editorInstance ?? null;
+}
+
+function waitForEditor(): Promise<void> {
+  return new Promise(resolve => {
+    const existing = getExistingEditor();
+    if (existing) {
+      editor = existing;
+      resolve();
+      return;
+    }
+
+    function patchEdit(editFn: typeof _ace.edit): void {
+      const originalEdit = editFn.bind(_ace);
+      _ace.edit = function (el, ...args) {
+        _ace.edit = originalEdit;
+        editor = originalEdit(el, ...args);
+        resolve();
+        return editor;
+      };
+    }
+
+    if (_ace.edit) {
+      patchEdit(_ace.edit);
+      return;
+    }
+    Object.defineProperty(_ace, 'edit', {
+      configurable: true,
+      enumerable: true,
+      set(fn: typeof _ace.edit) {
+        Object.defineProperty(_ace, 'edit', {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: fn,
+        });
+        patchEdit(fn);
+      },
+    });
+  });
+}
+
 async function onAceSet(): Promise<void> {
-  const elements = await waitForClass('scratchpad-ace-editor');
+  const currentHref = window.location.href;
+
+  const editorPromise = waitForEditor();
+  const settingsPromise = fetchExtensionSettings();
+  await Promise.all([cacheDOMReferences(), settingsPromise, editorPromise]);
+
   (_ace as unknown as AceConfig).config.set(
     'themePath',
     'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
   );
 
-  const editorElement = elements[0] as HTMLDivElement;
-  editor = _ace.edit(editorElement);
-  await cacheDOMReferences();
+  await updateEditorSettings();
 
-  const originalSetFontSize = editor.setFontSize.bind(editor);
-  editor.setFontSize = function (size) {
-    if (!allowEditorSettingsOverride) return;
-    return originalSetFontSize(size);
-  };
-
-  await fetchExtensionSettings();
-
-  if (isNewProgramURL(window.location.href)) {
-    const programType = window?.location?.pathname?.split('/')?.[3]?.toLowerCase();
-    if (!programType) return;
+  if (isNewProgramURL(currentHref)) {
+    const programType = currentHref?.split('/')?.[5]?.toLowerCase();
+    if (!programType) {
+      console.warn('[onAceSet] could not parse programType from href, bailing');
+      return;
+    }
     const cacheName = `__khanacademy_new_${programType}_cache__`;
     const cache = localStorage.getItem(cacheName);
     if (cache) {
@@ -222,7 +263,7 @@ async function onAceSet(): Promise<void> {
         editor.moveCursorToPosition(cursor);
         editor.renderer.scrollCursorIntoView();
       } catch (error) {
-        console.error(error);
+        console.error('[onAceSet] failed to restore cache:', error);
       }
     }
     editor.focus();
