@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error - CSS import not typed
 import './index.css';
 
 import { createAppStore } from '../lib/store';

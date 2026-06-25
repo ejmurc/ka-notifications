@@ -1,15 +1,18 @@
 export function parseMarkdown(text: string): string {
-  text = escapeHtml(text);
   const codeBlocks: string[] = [];
   const codeInlines: string[] = [];
+
   text = text.replace(/```([\s\S]*?)```/gm, (_, code) => {
     codeBlocks.push(escapeHtml(code));
-    return `\x00CB${codeBlocks.length - 1}\x00`;
+    return `\uE000CB${codeBlocks.length - 1}\uE001`;
   });
   text = text.replace(/`([^\n`]+?)`/g, (_, code) => {
     codeInlines.push(escapeHtml(code));
-    return `\x00CI${codeInlines.length - 1}\x00`;
+    return `\uE000CI${codeInlines.length - 1}\uE001`;
   });
+
+  text = escapeHtml(text);
+
   for (let i = 0, prev = ''; prev !== text && i < 20; prev = text, i++) {
     text = text.replace(/\*([^\n*]+?)\*/g, '<b>$1</b>');
     text = text.replace(/_([^\n_]+?)_/g, '<i>$1</i>');
@@ -23,8 +26,11 @@ export function parseMarkdown(text: string): string {
     /@([a-zA-Z][a-zA-Z\d]{0,39})/g,
     '<a class="hyperlink" href="https://www.khanacademy.org/profile/$1" target="_blank">@$1</a>',
   );
-  text = text.replace(/\x00CB(\d+)\x00/g, (_, i) => `<pre><code>${codeBlocks[+i]}</code></pre>`);
-  text = text.replace(/\x00CI(\d+)\x00/g, (_, i) => `<code>${codeInlines[+i]}</code>`);
+  text = text.replace(
+    /\uE000CB(\d+)\uE001/g,
+    (_, i) => `<pre><code>${codeBlocks[+i]}</code></pre>`,
+  );
+  text = text.replace(/\uE000CI(\d+)\uE001/g, (_, i) => `<code>${codeInlines[+i]}</code>`);
   return text;
 }
 

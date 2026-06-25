@@ -107,15 +107,14 @@ async function sendMessage(event: MouseEvent): Promise<void> {
       focusKind: 'scratchpad',
     });
 
-    console.log(parentFeedbackJSON);
-
-    const feedbackData = (parentFeedbackJSON as any)?.data?.feedback?.feedback?.[0];
-    if (!feedbackData) return handleError('Unsupported feedback structure');
+    const feedbackData = parentFeedbackJSON?.data?.feedback?.feedback?.[0];
 
     const parentKey =
       feedbacktype === 'QUESTION' && params.get('qa_expand_type') === 'answer'
-        ? (feedbackData.answers?.[0]?.key ?? feedbackData.key)
-        : feedbackData.key;
+        ? feedbackData?.__typename === 'QuestionFeedback'
+          ? (feedbackData.answers?.[0]?.key ?? feedbackData.key)
+          : feedbackData?.key
+        : feedbackData?.key;
 
     if (!parentKey) return handleError('Failed to resolve parent feedback key');
 

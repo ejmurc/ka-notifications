@@ -11,7 +11,7 @@ export function setupDropdown(): void {
     dropdownTrigger!.classList.add('active');
   }
   dropdownTrigger.addEventListener('click', () => {
-    dropdown.classList.contains('hidden') ? open() : close();
+    void (dropdown.classList.contains('hidden') ? open() : close());
   });
   document.addEventListener('mousedown', e => {
     if (!dropdown.contains(e.target as Node) && !dropdownTrigger.contains(e.target as Node)) {

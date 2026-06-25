@@ -8,7 +8,7 @@ function runCommand(command, message) {
   try {
     colorMessage(`\n${message}...`, '\x1b[32m');
     execSync(command, { stdio: 'inherit' });
-  } catch (error) {
+  } catch {
     colorMessage(`${message} failed`, '\x1b[31m');
     process.exit(1);
   }
@@ -17,5 +17,5 @@ function runCommand(command, message) {
 runCommand('npm run lint', 'Linting');
 runCommand('npm run format', 'Formatting');
 runCommand('npm run typecheck', 'Type checking');
-runCommand('npm run prod', 'Building Chrome package');
-runCommand('node scripts/zip-extension.mjs', 'Zipping package');
+runCommand('npm run build', 'Building');
+runCommand('node scripts/zip-extension.mjs', 'Zipping');

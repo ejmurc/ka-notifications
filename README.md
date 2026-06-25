@@ -5,8 +5,8 @@
 <br />
 <p align="center"><a rel="noreferrer noopener" href="https://chromewebstore.google.com/detail/khan-academy-notification/gdlfnahbohjggjhpcmabnfikiigncjbd"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white"></a></p>
 <p align="center">
-  <a href="https://www.codefactor.io/repository/github/eliasmurcray/ka-notifications">
-    <img src="https://www.codefactor.io/repository/github/eliasmurcray/ka-notifications/badge" alt="CodeFactor"></a>
+  <a href="https://www.codefactor.io/repository/github/ejmurc/ka-notifications">
+    <img src="https://www.codefactor.io/repository/github/ejmurc/ka-notifications/badge" alt="CodeFactor"></a>
   <img src="https://img.shields.io/chrome-web-store/rating/gdlfnahbohjggjhpcmabnfikiigncjbd.svg?color=00b16a" alt="Rating">
   <img src="https://img.shields.io/chrome-web-store/users/gdlfnahbohjggjhpcmabnfikiigncjbd.svg?color=07f" alt="User Count">
 </p>
@@ -20,15 +20,17 @@
 
 For direct contact with the developer team, check out our [Discord server](https://discord.com/invite/peexFK5dz6).
 
-If you would like to report a bug or have any other feedback, please [create an issue](https://github.com/eliasmurcray/ka-notifications/issues) on our GitHub repository.
+If you would like to report a bug or have any other feedback, please [create an issue](https://github.com/ejmurc/ka-notifications/issues) on our GitHub repository.
 
 ## Features
 
-- Instantly reply to notifications in the popup.
-- Mark all notifications as read in one click.
-- Experience lightning-fast loading times with predictive preloading techniques.
-- Boost your Khan Academy experience with the ability to load 100 replies at a time, instead of just 10.
-- Take control of your browsing experience with customizable comment sorting on Khan Academy.
+- Live notification badge with per-minute sync
+- One-click mark all read
+- Reply to notifications directly from the popup
+- Bulk comment loading
+- Offline program saves
+- Fully customizable code editor (font, theme, size, and more)
+- Profile, stats, and streak visible right in the toolbar
 
 ## Development
 
@@ -45,7 +47,7 @@ npm install
 To begin, run the following command:
 
 ```bash
-npm run dev
+npm run watch
 ```
 
 Proceed to make your code changes. It should update after every save. To test the extension on Chrome, follow these steps:
@@ -71,32 +73,6 @@ Proceed to make your code changes. It should update after every save. To test th
 3. On the "Extensions" page, look in the top left corner, and you'll see an "Update" button.
 
 4. Click the "Update" button, and it will pull the latest version of the extension from the same location on your computer and update it.
-
-### Firefox
-
-Firefox is now unsupported!
-
-Unfortunately, Firefox does not have a hot reload technique. You will have to run the following command whenever making a code change for testing on Firefox:
-
-```bash
-npm run release
-```
-
-To test the extension on Firefox, follow these steps:
-
-1. Navigate to `about:debugging#/runtime/this-firefox` in your browser.
-
-2. Expand the "Temporary Extensions" section.
-
-3. Click "Load Temporary Add-on" and upload the latest zip file from the `zip/` directory, which should contain a file with the letter "f."
-
-4. To grant the extension the necessary permissions, right-click on the extension icon in your toolbar.
-
-5. Click on "Manage Extension" from the context menu.
-
-6. Go to the Permissions tab.
-
-7. Turn on the switch that allows access to `https://www.khanacademy.org`.
 
 ### Submitting a PR
 

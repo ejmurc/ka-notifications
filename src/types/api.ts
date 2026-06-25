@@ -1,14 +1,13 @@
 import { KhanAcademyNotification } from './notification';
 
-const OPERATION_NAMES = [
-  'avatarDataForProfile',
-  'getNotificationsForUser',
-  'getFullUserProfile',
-  'AddFeedbackToDiscussion',
-  'feedbackQuery',
-  'clearBrandNewNotifications',
-  'StreakQuery',
-] as const;
+export type OperationName =
+  | 'avatarDataForProfile'
+  | 'getNotificationsForUser'
+  | 'getFullUserProfile'
+  | 'AddFeedbackToDiscussion'
+  | 'feedbackQuery'
+  | 'clearBrandNewNotifications'
+  | 'StreakQuery';
 
 export type AvatarDataForProfileVariables = {
   kaid: string;
@@ -17,8 +16,6 @@ export type AvatarDataForProfileVariables = {
 export type GetNotificationsForUserVariables = {
   after: string;
 };
-
-export type OperationName = (typeof OPERATION_NAMES)[number];
 
 export type QueryCache = Partial<Record<OperationName, string>>;
 
@@ -61,15 +58,6 @@ export type FeedbackQueryVariables = {
   qaExpandKey?: string;
 };
 
-export type FeedbackQueryResponse = {
-  feedback: {
-    feedback: any[];
-    cursor?: string;
-    isComplete: boolean;
-    sortedByDate: boolean;
-  };
-};
-
 export type AddFeedbackToDiscussionVariables = {
   focusKind?: string;
   focusId?: string;
@@ -80,17 +68,99 @@ export type AddFeedbackToDiscussionVariables = {
   shownLowQualityNotice?: boolean;
 };
 
-export type AddFeedbackToDiscussionResponse = {
-  addFeedbackToDiscussion: {
-    feedback: any;
-    lowQualityResponse?: {
-      feedbackCode: string;
-      feedbackChar: string;
-      feedbackType: string;
-      showLowQualityNotice: boolean;
+export type FeedbackAuthor = {
+  __typename: 'User';
+  avatar: {
+    __typename: 'Avatar';
+    imageSrc: string;
+    name: string;
+  };
+  id: string;
+  kaid: string;
+  nickname: string;
+};
+
+export type FeedbackFocus = {
+  __typename: 'FeedbackFocus';
+  id: string;
+  kind: string;
+  relativeUrl: string;
+  translatedTitle: string;
+};
+
+export type BaseFeedback = {
+  appearsAsDeleted: boolean;
+  author: FeedbackAuthor;
+  badges: unknown[] | null;
+  content: string;
+  date: string;
+  definitelyNotSpam: boolean;
+  deleted: boolean;
+  downVoted: boolean;
+  expandKey: string;
+  feedbackType: FeedbackType;
+  flaggedBy: string[] | null;
+  flaggedByUser: boolean;
+  flags: string[] | null;
+  focus: FeedbackFocus;
+  focusUrl: string;
+  fromVideoAuthor: boolean;
+  isLocked: boolean;
+  isPinned: boolean;
+  key: string;
+  lowQualityScore: number;
+  notifyOnAnswer: boolean;
+  permalink: string;
+  qualityKind: string;
+  replyCount: number;
+  replyExpandKeys: string[];
+  showLowQualityNotice: boolean;
+  sumVotesIncremented: number;
+  upVoted: boolean;
+};
+
+export type BasicFeedback = BaseFeedback & {
+  __typename: 'BasicFeedback';
+};
+
+export type AnswerFeedback = BaseFeedback & {
+  __typename: 'AnswerFeedback';
+};
+
+export type QuestionFeedback = BaseFeedback & {
+  __typename: 'QuestionFeedback';
+  answerCount: number;
+  answers: AnswerFeedback[];
+  hasAnswered: boolean | null;
+  isOld: boolean;
+};
+
+export type Feedback = BasicFeedback | QuestionFeedback | AnswerFeedback;
+
+export type FeedbackQueryResponse = {
+  data: {
+    feedback: {
+      __typename: 'FeedbackForFocus';
+      cursor: string | null;
+      feedback: Feedback[];
+      isComplete: boolean;
+      sortedByDate: boolean;
     };
-    error?: {
-      code: string;
+  };
+};
+
+export type AddFeedbackToDiscussionResponse = {
+  data: {
+    addFeedbackToDiscussion: {
+      __typename: 'AddFeedbackToDiscussionMutation';
+      error: { code: string } | null;
+      feedback: BasicFeedback;
+      lowQualityResponse: {
+        feedbackCode: string;
+        feedbackChar: string;
+        feedbackType: string;
+        showLowQualityNotice: boolean;
+      } | null;
     };
   };
 };

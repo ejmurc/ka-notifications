@@ -260,7 +260,7 @@ export function createNotificationString(n: KhanAcademyNotification): string {
   if (isCourseMasteryDueDateCreatedNotification(n)) return buildMasteryDueDateCreated(n);
   if (isMasteryGoalDueDateApproachingCreatedNotification(n))
     return buildMasteryGoalDueDateApproaching(n);
-  const unknownNotification = n as any;
+  const unknownNotification = n as KhanAcademyNotification & Record<string, unknown>;
   console.warn(`Unsupported notification type: ${unknownNotification.__typename}`);
   return baseWrapper(
     unknownNotification,
