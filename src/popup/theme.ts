@@ -1,3 +1,5 @@
+import type { StorageData } from '../types/extension';
+
 export function onThemeChanged({ darkTheme }: Pick<StorageData, 'darkTheme'>): void {
   const root = document.documentElement;
   root.classList.add('no-transition');
@@ -12,7 +14,7 @@ export function onThemeChanged({ darkTheme }: Pick<StorageData, 'darkTheme'>): v
   void root.offsetWidth;
   root.classList.remove('no-transition');
 
-  const el = document.getElementById('theme');
+  const el = document.getElementById('theme') as HTMLInputElement | null;
   if (el) {
     el.checked = darkTheme === true;
   }

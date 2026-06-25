@@ -10,7 +10,11 @@ const OPERATION_NAMES = [
   'StreakQuery',
 ] as const;
 
-type GetNotificationsForUserVariables = {
+export type AvatarDataForProfileVariables = {
+  kaid: string;
+};
+
+export type GetNotificationsForUserVariables = {
   after: string;
 };
 
@@ -47,7 +51,7 @@ export type ClearBrandNewNotificationsResponse = {
 
 export type FeedbackType = 'QUESTION' | 'ANSWER' | 'COMMENT' | 'REPLY';
 
-type FeedbackQueryVariables = {
+export type FeedbackQueryVariables = {
   topicId: string;
   focusKind: string;
   cursor?: string;
@@ -66,7 +70,7 @@ export type FeedbackQueryResponse = {
   };
 };
 
-type AddFeedbackToDiscussionVariables = {
+export type AddFeedbackToDiscussionVariables = {
   focusKind?: string;
   focusId?: string;
   parentKey: string;
@@ -215,4 +219,5 @@ export type StreakQueryResponse = {
 export type GraphQLVariables =
   | GetNotificationsForUserVariables
   | AddFeedbackToDiscussionVariables
-  | FeedbackQueryVariables;
+  | FeedbackQueryVariables
+  | AvatarDataForProfileVariables;

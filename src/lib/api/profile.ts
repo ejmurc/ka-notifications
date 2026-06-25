@@ -1,6 +1,7 @@
 import type { GetFullUserProfileResponse } from '../../types/api';
-import type { UserProfile } from '../../types/extension';
 import { request } from './request';
+
+type UserProfile = NonNullable<GetFullUserProfileResponse['data']['user']>;
 
 export async function getFullUserProfile(): Promise<UserProfile | undefined> {
   const response = await request('getFullUserProfile');

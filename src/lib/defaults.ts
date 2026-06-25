@@ -3,6 +3,7 @@ import type { StorageData } from '../types/extension';
 export const defaults: StorageData = {
   aceThemes: [],
   authenticated: false,
+  avatarSrc: '',
   notifications: [],
   notificationCursor: '',
   darkTheme: false,
@@ -28,11 +29,10 @@ export const defaults: StorageData = {
   nickname: '',
   username: '',
   points: 0,
-  avatarSrc: '',
   profileLoaded: false,
   badgeCounts: [0, 0, 0, 0, 0, 0],
   subtitle: 'points',
   streak: 0,
 } as const;
 
-export const storageKeyset = new Set(Object.keys(defaults) as (keyof StorageData)[]);
+export const storageKeyset = new Set<string>(Object.keys(defaults));

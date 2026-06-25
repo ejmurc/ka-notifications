@@ -29,7 +29,7 @@ export async function syncNotifications(): Promise<void> {
       const batch: KhanAcademyNotification[] = response.notifications;
       notifications.push(...batch);
 
-      after = response.after;
+      after = response.after ?? '';
 
       if (!response.after || batch.some(n => !n.brandNew)) break;
     } catch (error) {

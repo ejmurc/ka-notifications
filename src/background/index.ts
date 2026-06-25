@@ -12,12 +12,12 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === 'install' || reason === 'update') {
     await StorageManager.remove([
       'authenticated',
+      'avatarSrc',
       'notifications',
       'notificationCursor',
       'nickname',
       'username',
       'points',
-      'avatarSrc',
       'profileLoaded',
     ]);
     await Promise.all([

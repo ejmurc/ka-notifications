@@ -1,127 +1,201 @@
-type BaseReadableNotification = {
+export interface BaseNotification {
   __typename: string;
   brandNew: boolean;
+  class_: string;
   date: string;
   kaid: string;
   read: boolean;
   url: string;
   urlsafeKey: string;
-  iconSrc: string;
-  class_: Array<string>;
-};
+}
 
-type ThreadCreatedNotification = BaseReadableNotification & {
-  nickname: string;
-  flagged: boolean;
+export interface ThreadCreatedNotification extends BaseNotification {
+  __typename: 'ThreadCreatedNotification';
+  coachee: {
+    id: string;
+    kaid: string;
+    nickname: string;
+  };
   threadId: string;
-  relationship: string;
-};
+  flagged: boolean;
+}
 
-type AssignmentDueDateNotification = BaseReadableNotification & {
-  numAssignments: number | null | undefined;
+export interface AssignmentDueDateNotification extends BaseNotification {
+  __typename: 'AssignmentDueDateNotification';
+  numAssignments: number;
   dueDate: string;
   contentTitle: string;
-  topicIconUrl: string;
-};
+  curationNodeIconURL: string;
+}
 
-type AssignmentCreatedNotification = BaseReadableNotification & {
-  numAssignments: number | null | undefined;
+export interface AssignmentCreatedNotification extends BaseNotification {
+  __typename: 'AssignmentCreatedNotification';
+  numAssignments: number;
   contentTitle: string;
-  topicIconUrl: string;
+  curationNodeIconURL: string;
   className: string;
-};
+}
 
-type CourseMasteryGoalCreatedNotification = BaseReadableNotification & {
-  masteryPercentage: number;
-  topicTranslatedTitle: string;
-  topicIconUrl: string;
-};
-
-type BadgeNotification = BaseReadableNotification & {
-  translatedDescription: string;
-  translatedExtendedDescription: string;
-};
-
-type CoachRequestNotification = BaseReadableNotification & {
-  coachNickname: string;
+export interface CoachRequestNotification extends BaseNotification {
+  __typename: 'CoachRequestNotification';
   coachIsParent: boolean;
-  coachKaid: string;
-};
+  coach: {
+    id: string;
+    kaid: string;
+    nickname: string;
+  };
+}
 
-type ModerationNotification = BaseReadableNotification & {
+export interface BadgeNotification extends BaseNotification {
+  __typename: 'BadgeNotification';
+  badgeName: string;
+  badge: {
+    description: string;
+    fullDescription: string;
+    name: string;
+    relativeUrl: string;
+    icons: {
+      compactUrl: string;
+    };
+  };
+}
+
+export interface CourseMasteryGoalCreatedNotification extends BaseNotification {
+  __typename: 'CourseMasteryGoalCreatedNotification';
+  curationNodeIconURL: string;
+  curationNodeTranslatedTitle: string;
+  masteryPercentage: number;
+}
+
+export interface ModeratorNotification extends BaseNotification {
+  __typename: 'ModeratorNotification';
   text: string;
-};
+}
 
-type ProgramFeedbackNotification = BaseReadableNotification & {
+export interface ProgramFeedbackNotification extends BaseNotification {
+  __typename: 'ProgramFeedbackNotification';
   authorAvatarSrc: string;
-  feedbackIsComment: boolean;
   authorNickname: string;
+  feedbackType: string;
   translatedScratchpadTitle: string;
   content: string;
-};
+}
 
-type CoachRequestAcceptedNotification = BaseReadableNotification & {
-  imageSource: string | null | undefined;
-  studentIdentifier: string | null | undefined;
-  classInfo: string | null | undefined;
-};
+export interface CoachRequestAcceptedNotification extends BaseNotification {
+  __typename: 'CoachRequestAcceptedNotification';
+  isMultipleClassrooms: boolean;
+  student: {
+    id: string;
+    email: string;
+    nickname: string;
+  };
+  classroom: {
+    cacheId: string;
+    id: string;
+    name: string;
+    topics: {
+      id: string;
+      slug: string;
+      iconUrl: string;
+      key: string;
+      translatedStandaloneTitle: string;
+    };
+  };
+}
 
-type AvatarNotification = BaseReadableNotification & {
+export interface AvatarNotification extends BaseNotification {
+  __typename: 'AvatarNotification';
+  name: string;
   thumbnailSrc: string;
-  translatedDisplayName: string;
-  translatedRequirements: Array<string>;
-};
+}
 
-type InfoNotification = BaseReadableNotification & {
-  translatedText: string;
-};
+export interface InfoNotification extends BaseNotification {
+  __typename: 'InfoNotification';
+  notificationType: string;
+}
 
-type ResponseFeedbackNotification = BaseReadableNotification & {
-  authorAvatarSrc: string;
-  feedbackIsProjectEvalRequest?: boolean;
-  feedbackIsProjectEvalAnswer?: boolean;
-  feedbackIsPassingEvalAnswer?: boolean;
-  feedbackIsQuestion?: boolean;
-  feedbackIsReply?: boolean;
+export interface ResponseFeedbackNotification extends BaseNotification {
+  __typename: 'ResponseFeedbackNotification';
+  authorAvatarUrl: string;
   authorNickname: string;
+  feedbackType: string;
   focusTranslatedTitle: string;
-  content: string | null | undefined;
-};
+  content: string;
+  sumVotesIncremented: number;
+}
 
-type GroupedBadgeNotification = BaseReadableNotification & {
-  translatedDescriptions: Array<string>;
-};
+export interface GroupedBadgeNotification extends BaseNotification {
+  __typename: 'GroupedBadgeNotification';
+  badgeNotifications: {
+    badge: {
+      badgeCategory: number;
+      description: string;
+      fullDescription: string;
+      name: string;
+      icons: {
+        compactUrl: string;
+      };
+    };
+  };
+}
 
-type UnitMasteryGoalCreatedNotification = BaseReadableNotification & {
-  coachName: string;
-  numAssignments: number;
-  iconUrl: string | null | undefined;
-};
+export interface UnitMasteryGoalCreatedNotification extends BaseNotification {
+  __typename: 'UnitMasteryGoalCreatedNotification';
+  numAssignmentsCount: number;
+  classroomInfo: {
+    cacheId: string;
+    id: string;
+    coach: {
+      id: string;
+      nickname: string;
+    };
+  };
+  unit: {
+    id: string;
+    iconUrl: string;
+    parent: {
+      id: string;
+      iconUrl: string;
+    };
+  };
+}
 
-type UnitMasteryDueDateCreatedNotification = BaseReadableNotification & {
+export interface UnitMasteryDueDateCreatedNotification extends BaseNotification {
+  __typename: 'UnitMasteryDueDateCreatedNotification';
   dueDate: string;
-  iconUrl: string | null | undefined;
-  topicName: string;
-  curationNodeLevel: 'UNIT';
-};
+  unit: {
+    id: string;
+    iconUrl: string;
+    translatedStandaloneTitle: string;
+  };
+}
 
-type CourseMasteryDueDateCreatedNotification = BaseReadableNotification & {
+export interface CourseMasteryDueDateCreatedNotification extends BaseNotification {
+  __typename: 'CourseMasteryDueDateCreatedNotification';
   dueDate: string;
-  iconUrl: string | null | undefined;
-  topicName: string;
-  curationNodeLevel: 'COURSE';
-};
+  course: {
+    id: string;
+    iconUrl: string;
+    translatedStandaloneTitle: string;
+  };
+}
 
-type MasteryGoalDueDateApproachingCreatedNotification = BaseReadableNotification;
+export interface MasteryGoalDueDateApproachingCreatedNotification extends BaseNotification {
+  __typename: 'MasteryGoalDueDateApproachingCreatedNotification';
+  classroomInfo: {
+    id: string;
+    cacheId: string;
+  };
+}
 
 export type KhanAcademyNotification =
   | ThreadCreatedNotification
   | AssignmentDueDateNotification
   | AssignmentCreatedNotification
-  | BadgeNotification
   | CoachRequestNotification
+  | BadgeNotification
   | CourseMasteryGoalCreatedNotification
-  | ModerationNotification
+  | ModeratorNotification
   | ProgramFeedbackNotification
   | CoachRequestAcceptedNotification
   | AvatarNotification

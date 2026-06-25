@@ -1,8 +1,10 @@
 import { getNotificationsForUser } from '../../lib/api/notifications';
 import { createNotificationString } from '../notification-builder';
 import { addReplyButtonEventListeners } from '../reply-handler';
-import type { AppStore } from '../../lib/store';
 import type { StorageData } from '../../types/extension';
+import type { createAppStore } from '../../lib/store';
+
+type AppStore = Awaited<ReturnType<typeof createAppStore>>;
 
 export async function setupNotificationsList(store: AppStore) {
   let cursor = '';
@@ -15,7 +17,7 @@ export async function setupNotificationsList(store: AppStore) {
     const result = await getNotificationsForUser(cursor);
     loading = false;
     if (!result) return;
-    cursor = result.after;
+    cursor = result.after ?? '';
     const list = document.getElementById('notifications-list');
     if (list) {
       list.insertAdjacentHTML(
@@ -29,20 +31,29 @@ export async function setupNotificationsList(store: AppStore) {
     if (!cursor && spinner) spinner.style.display = 'none';
   };
 
-  let unsubscribe: () => void;
-  const { notifications, notificationCursor } = await new Promise(resolve => {
-    unsubscribe = store.subscribe(['notifications', 'notificationCursor'], values => {
-      if (values.notificationCursor) {
-        resolve(values);
-      }
-    });
+  type ResolveValue = Pick<StorageData, 'notifications' | 'notificationCursor'>;
+
+  const { notifications, notificationCursor } = await new Promise<ResolveValue>(resolve => {
+    const unsubscribe = store.subscribe(
+      ['notifications', 'notificationCursor'],
+      (values: ResolveValue) => {
+        if (values.notificationCursor) {
+          unsubscribe();
+          resolve(values);
+        }
+      },
+      { immediate: false },
+    );
+    const current = store.get();
+    if (current.notificationCursor) {
+      unsubscribe();
+      resolve(current as ResolveValue);
+    }
   });
-  unsubscribe();
 
   cursor = notificationCursor ?? '';
   const spinner = document.getElementById('notifications-spinner');
   if (!cursor && spinner) spinner.style.display = 'none';
-
   const list = document.getElementById('notifications-list');
   if (list) {
     if (!notifications?.length) {
@@ -52,6 +63,5 @@ export async function setupNotificationsList(store: AppStore) {
       addReplyButtonEventListeners();
     }
   }
-
   document.body.addEventListener('scroll', onScroll);
 }

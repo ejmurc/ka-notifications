@@ -1,4 +1,3 @@
-import type { Store } from 'keysub';
 import type { StorageData } from '../../types/extension';
 
 export function renderUnauthenticated({

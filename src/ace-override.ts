@@ -48,7 +48,7 @@ async function loadEditorFont(fontFamily: string, fontKey: string): Promise<void
 type Ace = typeof ace;
 let _ace: Ace;
 let editor: AceAjax.Editor;
-let settings: EditorSettings = {};
+let settings: EditorSettings;
 
 let mainContent: HTMLDivElement | null = null;
 let mainContentChild: HTMLDivElement | null = null;
@@ -86,36 +86,34 @@ function isNewProgramURL(url: string): boolean {
 
 async function fetchExtensionSettings(): Promise<void> {
   return new Promise(resolve => {
-    const listener = (event: MessageEvent) => {
-      if (event.data.type === 'EDITOR_SETTINGS') {
-        window.removeEventListener('message', listener);
-        clearInterval(interval);
-        clearTimeout(timeout);
-        resolve();
-      }
+    const listener = () => {
+      document.removeEventListener('EDITOR_SETTINGS', listener);
+      clearInterval(interval);
+      clearTimeout(timeout);
+      resolve();
     };
 
-    window.addEventListener('message', listener);
+    document.addEventListener('EDITOR_SETTINGS', listener);
 
     const interval = setInterval(() => {
-      window.postMessage({ type: 'EDITOR_SETTINGS_REQUEST' }, '*');
+      document.dispatchEvent(new CustomEvent('EDITOR_SETTINGS_REQUEST'));
     }, SETTINGS_REQUEST_INTERVAL);
 
     const timeout = setTimeout(() => {
       clearInterval(interval);
-      window.removeEventListener('message', listener);
+      document.removeEventListener('EDITOR_SETTINGS', listener);
       console.warn('[fetchExtensionSettings] Timed out waiting for editor settings');
       resolve();
     }, SETTINGS_REQUEST_TIMEOUT);
 
-    window.postMessage({ type: 'EDITOR_SETTINGS_REQUEST' }, '*');
+    document.dispatchEvent(new CustomEvent('EDITOR_SETTINGS_REQUEST'));
   });
 }
 
-window.addEventListener('message', event => {
-  if (event.source !== window) return;
-  if (event.data.type === 'EDITOR_SETTINGS') {
-    settings = event.data.settings;
+document.addEventListener('EDITOR_SETTINGS', (event: Event) => {
+  const customEvent = event as CustomEvent;
+  if (customEvent.detail && customEvent.detail.settings) {
+    settings = customEvent.detail.settings;
     updateEditorSettings();
   }
 });
@@ -137,8 +135,8 @@ async function updateEditorSettings(): Promise<void> {
     showLineNumbers: settings.showLineNumbers ?? true,
     showGutter: settings.showGutter ?? true,
     behavioursEnabled: settings.behavioursEnabled ?? false,
-    enableLiveAutocompletion: settings.enableBasicAutocompletion ?? false,
-    enableBasicAutocompletion: settings.enableBasicAutocompletion ?? false,
+    enableLiveAutocompletion: settings.autocompletion ?? false,
+    enableBasicAutocompletion: settings.autocompletion ?? false,
     displayIndentGuides: settings.displayIndentGuides ?? false,
   });
 
@@ -152,7 +150,7 @@ async function updateEditorSettings(): Promise<void> {
 
   const session = editor.getSession();
   session.setOptions({
-    useSoftTabs: settings.useSoftTabs ?? true,
+    useSoftTabs: settings.softTabs ?? true,
     tabSize: parseInt(settings.tabSize ?? '2', 10),
   });
 
@@ -188,27 +186,14 @@ interface AceConfig {
   };
 }
 
-function getExistingEditor(): AceAjax.Editor | null {
-  const el = document.querySelector('.ace_editor');
-  if (!el) return null;
-  const editorInstance = (el as HTMLElement & { env?: { editor?: AceAjax.Editor } }).env?.editor;
-  return editorInstance ?? null;
-}
-
 function waitForEditor(): Promise<void> {
   return new Promise(resolve => {
-    const existing = getExistingEditor();
-    if (existing) {
-      editor = existing;
-      resolve();
-      return;
-    }
-
     function patchEdit(editFn: typeof _ace.edit): void {
       const originalEdit = editFn.bind(_ace);
-      _ace.edit = function (el, ...args) {
+      _ace.edit = function (el) {
         _ace.edit = originalEdit;
-        editor = originalEdit(el, ...args);
+        editor =
+          typeof el === 'string' ? originalEdit(el as string) : originalEdit(el as HTMLElement);
         resolve();
         return editor;
       };
@@ -216,20 +201,30 @@ function waitForEditor(): Promise<void> {
 
     if (_ace.edit) {
       patchEdit(_ace.edit);
-      return;
+    } else {
+      Object.defineProperty(_ace, 'edit', {
+        configurable: true,
+        enumerable: true,
+        set(fn: typeof _ace.edit) {
+          Object.defineProperty(_ace, 'edit', {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: fn,
+          });
+          patchEdit(fn);
+        },
+      });
     }
-    Object.defineProperty(_ace, 'edit', {
-      configurable: true,
-      enumerable: true,
-      set(fn: typeof _ace.edit) {
-        Object.defineProperty(_ace, 'edit', {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: fn,
-        });
-        patchEdit(fn);
-      },
+
+    queueMicrotask(() => {
+      const el = document.querySelector('.ace_editor');
+      const existing = (el as (HTMLElement & { env?: { editor?: AceAjax.Editor } }) | null)?.env
+        ?.editor;
+      if (existing && !editor) {
+        editor = existing;
+        resolve();
+      }
     });
   });
 }
@@ -267,9 +262,23 @@ async function onAceSet(): Promise<void> {
       }
     }
     editor.focus();
+
     let saveBeforeUnload = false;
+
     function saveProgram() {
-      if (!saveBeforeUnload) window.addEventListener('beforeunload', saveProgram);
+      if (!isNewProgramURL(window.location.href)) {
+        editor.selection.off('changeCursor', saveProgram);
+        editor.off('change', saveProgram);
+        window.removeEventListener('beforeunload', saveProgram);
+        document.body.removeEventListener('mouseup', handleSaveClick);
+        return;
+      }
+
+      if (!saveBeforeUnload) {
+        window.addEventListener('beforeunload', saveProgram);
+        saveBeforeUnload = true;
+      }
+
       const content = editor.getValue();
       const cursor = editor.getCursorPosition();
       if (content.length === 0) {
@@ -278,19 +287,29 @@ async function onAceSet(): Promise<void> {
         localStorage.setItem(cacheName, JSON.stringify({ content, cursor }));
       }
     }
+
     editor.selection.on('changeCursor', saveProgram);
     editor.on('change', saveProgram);
-    document.body.addEventListener('mouseup', e => {
+
+    function handleSaveClick(e: MouseEvent) {
+      if (!isNewProgramURL(window.location.href)) {
+        document.body.removeEventListener('mouseup', handleSaveClick);
+        return;
+      }
+
       const target = e.target as HTMLElement;
       if (
         target.textContent?.trim() === 'Save' &&
         !!target.closest('.modal, .dialog, .popup, [role="dialog"]')
       ) {
         window.removeEventListener('beforeunload', saveProgram);
+        document.body.removeEventListener('mouseup', handleSaveClick);
         saveBeforeUnload = false;
         localStorage.removeItem(cacheName);
       }
-    });
+    }
+
+    document.body.addEventListener('mouseup', handleSaveClick);
   }
 }
 

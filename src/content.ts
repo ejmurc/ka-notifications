@@ -29,15 +29,17 @@ async function initializeContentScript(): Promise<void> {
 
   function attachEditorSettingsSync(): void {
     const postEditorSettings = (settings: EditorSettings) => {
-      window.postMessage({ type: 'EDITOR_SETTINGS', settings }, '*');
+      document.dispatchEvent(
+        new CustomEvent('EDITOR_SETTINGS', {
+          detail: { settings },
+        }),
+      );
     };
 
-    window.addEventListener('message', event => {
-      if (event.source === window && event.data.type === 'EDITOR_SETTINGS_REQUEST') {
-        chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
-          postEditorSettings(editorSettings || {});
-        });
-      }
+    document.addEventListener('EDITOR_SETTINGS_REQUEST', () => {
+      chrome.storage.local.get('editorSettings', ({ editorSettings }) => {
+        postEditorSettings(editorSettings || {});
+      });
     });
 
     chrome.storage.onChanged.addListener((changes, namespace) => {

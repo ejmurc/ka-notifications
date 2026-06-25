@@ -1,10 +1,13 @@
 {
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "chrome"],
   "compilerOptions": {
-    "types": ["ace", "chrome-types"],
+    "types": ["ace", "chrome-types", "node"],
     "target": "esnext",
     "module": "esnext",
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "allowArbitraryExtensions": true,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,

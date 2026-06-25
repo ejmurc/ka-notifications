@@ -1,12 +1,12 @@
 import type {
   KhanAcademyNotification,
-  BaseReadableNotification,
+  BaseNotification,
   ResponseFeedbackNotification,
   ProgramFeedbackNotification,
   AvatarNotification,
   GroupedBadgeNotification,
   BadgeNotification,
-  ModerationNotification,
+  ModeratorNotification,
   InfoNotification,
   AssignmentCreatedNotification,
   AssignmentDueDateNotification,
@@ -29,11 +29,7 @@ function resolveIcon(...sources: (string | null | undefined)[]): string {
   return '48.png';
 }
 
-function baseWrapper(
-  notification: BaseReadableNotification,
-  header: string,
-  content: string,
-): string {
+function baseWrapper(notification: BaseNotification, header: string, content: string): string {
   const { brandNew } = notification;
   const classes = ['notification'];
   if (brandNew) classes.push('notification--new');
@@ -52,11 +48,7 @@ function headerTemplate(
     <div class="notification-header">
       <img class="notification-avatar" src="${iconSrc}">
       <h3 class="notification-nickname">${escapeHtml(nickname)}</h3>
-      ${
-        link
-          ? `<a class="notification-link" href="https://www.khanacademy.org${link}" target="_blank">${linkText}</a>`
-          : ''
-      }
+      ${link ? `<a class="notification-link" href="https://www.khanacademy.org${link}" target="_blank">${linkText}</a>` : ''}
       ${flags?.flagged ? `<span class="notification-flag" title="This content was flagged">⚑ Flagged</span>` : ''}
       <span class="notification-date">${timeSince(new Date(date))} ago</span>
     </div>`;
@@ -118,25 +110,26 @@ function buildAvatar(n: AvatarNotification): string {
     'use avatar',
     n.date,
   );
-  const content = `<p class="notification-content">You unlocked <b>${escapeHtml(n.translatedDisplayName)}</b>! <i>${n.translatedRequirements.join(
-    ', ',
-  )}</i></p>`;
+  const content = `<p class="notification-content">You unlocked <b>${escapeHtml(n.name)}</b>!</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildGroupedBadge(n: GroupedBadgeNotification): string {
-  const header = headerTemplate(resolveIcon(n.iconSrc), 'KA Badges', n.url, 'view badges', n.date);
-  const content = `<p class="notification-content">You earned ${formatBadgeList(n.translatedDescriptions)}. Congratulations!</p>`;
+  const icon = resolveIcon(n.badgeNotifications?.badge?.icons?.compactUrl);
+  const header = headerTemplate(icon, 'KA Badges', n.url, 'view badges', n.date);
+  const descriptions = [n.badgeNotifications?.badge?.description].filter(Boolean) as string[];
+  const content = `<p class="notification-content">You earned ${formatBadgeList(descriptions)}. Congratulations!</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildBadge(n: BadgeNotification): string {
-  const header = headerTemplate(resolveIcon(n.iconSrc), 'KA Badges', n.url, 'view badge', n.date);
-  const content = `<p class="notification-content">You earned <b>${n.translatedDescription}</b>! <i>${n.translatedExtendedDescription}</i></p>`;
+  const icon = resolveIcon(n.badge?.icons?.compactUrl);
+  const header = headerTemplate(icon, 'KA Badges', n.url, 'view badge', n.date);
+  const content = `<p class="notification-content">You earned <b>${n.badge.description}</b>! <i>${n.badge.fullDescription}</i></p>`;
   return baseWrapper(n, header, content);
 }
 
-function buildModeration(n: ModerationNotification): string {
+function buildModeration(n: ModeratorNotification): string {
   const header = headerTemplate('guardian.png', 'KA Guardian', null, null, n.date);
   const content = `<p class="notification-content">${parseMarkdown(n.text)}</p>`;
   return baseWrapper(n, header, content);
@@ -144,20 +137,14 @@ function buildModeration(n: ModerationNotification): string {
 
 function buildInfo(n: InfoNotification): string {
   const header = headerTemplate(resolveIcon(), 'KA Info', null, null, n.date);
-  const content = `<p class="notification-content">${parseMarkdown(n.translatedText)}</p>`;
+  const content = `<p class="notification-content">${n.notificationType}</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildThreadCreated(n: ThreadCreatedNotification): string {
-  const actor =
-    n.relationship === 'coach'
-      ? 'A student'
-      : n.relationship === 'self'
-        ? 'You'
-        : n.nickname
-          ? escapeHtml(n.nickname)
-          : 'Someone';
-  const header = headerTemplate(resolveIcon(n.iconSrc), n.nickname, n.url, 'view thread', n.date, {
+  const nickname = n.coachee?.nickname ?? '';
+  const actor = n.coachee ? escapeHtml(nickname) : 'Someone';
+  const header = headerTemplate(resolveIcon(), nickname, n.url, 'view thread', n.date, {
     flagged: n.flagged,
   });
   const content = `<p class="notification-content">${actor} started a new discussion thread.</p>`;
@@ -166,7 +153,7 @@ function buildThreadCreated(n: ThreadCreatedNotification): string {
 
 function buildAssignmentCreated(n: AssignmentCreatedNotification): string {
   const header = headerTemplate(
-    n.topicIconUrl || resolveIcon(),
+    resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Assignments',
     n.url,
     'view assignment',
@@ -178,54 +165,41 @@ function buildAssignmentCreated(n: AssignmentCreatedNotification): string {
 
 function buildAssignmentDueDate(n: AssignmentDueDateNotification): string {
   const header = headerTemplate(
-    n.topicIconUrl || resolveIcon(),
+    resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Assignments',
     n.url,
     'view details',
     n.date,
   );
-  const content = `<p class="notification-content">You have ${n.numAssignments ?? 1} assignment(s) due <b>${new Date(
-    n.dueDate,
-  ).toLocaleDateString()}</b>: ${escapeHtml(n.contentTitle)}.</p>`;
+  const content = `<p class="notification-content">You have ${n.numAssignments ?? 1} assignment(s) due <b>${new Date(n.dueDate).toLocaleDateString()}</b>: ${escapeHtml(n.contentTitle)}.</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildCourseMasteryGoalCreated(n: CourseMasteryGoalCreatedNotification): string {
   const header = headerTemplate(
-    n.topicIconUrl || resolveIcon(),
+    resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Mastery Goals',
     n.url,
     'view goal',
     n.date,
   );
-  const content = `<p class="notification-content">You set a mastery goal for <b>${escapeHtml(
-    n.topicTranslatedTitle,
-  )}</b> (${n.masteryPercentage}% target).</p>`;
+  const content = `<p class="notification-content">You set a mastery goal for <b>${escapeHtml(n.curationNodeTranslatedTitle)}</b> (${n.masteryPercentage}% target).</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildCoachRequest(n: CoachRequestNotification): string {
-  const header = headerTemplate(
-    resolveIcon(n.iconSrc),
-    n.coachNickname,
-    n.url,
-    'view request',
-    n.date,
-  );
+  const header = headerTemplate(resolveIcon(), n.coach.nickname, n.url, 'view request', n.date);
   const content = `<p class="notification-content">${n.coachIsParent ? 'A parent' : 'A coach'} requested to coach you.</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildCoachRequestAccepted(n: CoachRequestAcceptedNotification): string {
-  const header = headerTemplate(
-    resolveIcon(n.imageSource, n.iconSrc),
-    'Coaching',
-    n.url,
-    'view details',
-    n.date,
-  );
-  const content = `<p class="notification-content">Coach request accepted by <b>${escapeHtml(n.studentIdentifier ?? 'a student')}</b>.
-    ${n.classInfo ? `Class: <i>${escapeHtml(n.classInfo)}</i>.` : ''}</p>
+  const icon = resolveIcon(n.classroom?.topics?.iconUrl);
+  const header = headerTemplate(icon, 'Coaching', n.url, 'view details', n.date);
+  const studentName = n.student?.nickname ?? n.student?.email ?? 'a student';
+  const className = n.classroom?.name;
+  const content = `<p class="notification-content">Coach request accepted by <b>${escapeHtml(studentName)}</b>.
+    ${className ? `Class: <i>${escapeHtml(className)}</i>.` : ''}</p>
     <div class="notification-actions">
       <a class="notification-btn" href="https://www.khanacademy.org${n.url}" target="_blank">Respond</a>
     </div>`;
@@ -233,36 +207,33 @@ function buildCoachRequestAccepted(n: CoachRequestAcceptedNotification): string 
 }
 
 function buildUnitMasteryGoalCreated(n: UnitMasteryGoalCreatedNotification): string {
-  const header = headerTemplate(
-    resolveIcon(n.iconUrl, n.iconSrc),
-    'Mastery Goal',
-    n.url,
-    'view goal',
-    n.date,
-  );
-  const content = `<p class="notification-content">${n.coachName} created a mastery goal for ${n.numAssignments} assignment(s).</p>`;
+  const icon = resolveIcon(n.unit?.iconUrl ?? n.unit?.parent?.iconUrl);
+  const coachName = n.classroomInfo?.coach?.nickname ?? 'Your coach';
+  const header = headerTemplate(icon, 'Mastery Goal', n.url, 'view goal', n.date);
+  const content = `<p class="notification-content">${coachName} created a mastery goal for ${n.numAssignmentsCount} assignment(s).</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildMasteryDueDateCreated(
   n: UnitMasteryDueDateCreatedNotification | CourseMasteryDueDateCreatedNotification,
 ): string {
-  const label = n.curationNodeLevel === 'UNIT' ? 'Unit Mastery' : 'Course Mastery';
-  const header = headerTemplate(
-    resolveIcon(n.iconUrl, n.iconSrc),
-    `${label} Due Date`,
-    n.url,
-    'view details',
-    n.date,
-  );
-  const content = `<p class="notification-content"><b>${escapeHtml(n.topicName)}</b> ${label.toLowerCase()} goal due <b>${new Date(n.dueDate).toLocaleDateString()}</b>.</p>`;
+  const isUnit = n.__typename === 'UnitMasteryDueDateCreatedNotification';
+  const label = isUnit ? 'Unit Mastery' : 'Course Mastery';
+  const icon = isUnit
+    ? resolveIcon((n as UnitMasteryDueDateCreatedNotification).unit?.iconUrl)
+    : resolveIcon((n as CourseMasteryDueDateCreatedNotification).course?.iconUrl);
+  const topicName = isUnit
+    ? (n as UnitMasteryDueDateCreatedNotification).unit?.translatedStandaloneTitle
+    : (n as CourseMasteryDueDateCreatedNotification).course?.translatedStandaloneTitle;
+  const header = headerTemplate(icon, `${label} Due Date`, n.url, 'view details', n.date);
+  const content = `<p class="notification-content"><b>${escapeHtml(topicName ?? '')}</b> ${label.toLowerCase()} goal due <b>${new Date(n.dueDate).toLocaleDateString()}</b>.</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildMasteryGoalDueDateApproaching(
   n: MasteryGoalDueDateApproachingCreatedNotification,
 ): string {
-  const header = headerTemplate(resolveIcon(n.iconSrc), 'Mastery Goal', n.url, 'view goal', n.date);
+  const header = headerTemplate(resolveIcon(), 'Mastery Goal', n.url, 'view goal', n.date);
   const content = `<p class="notification-content">Your mastery goal due date is approaching!</p>
   <div class="notification-actions">
       <a class="notification-btn" href="https://www.khanacademy.org${n.url}" target="_blank">View Goal</a>
@@ -303,83 +274,67 @@ function isResponseFeedbackNotification(
 ): n is ResponseFeedbackNotification {
   return n.__typename === 'ResponseFeedbackNotification';
 }
-
 function isProgramFeedbackNotification(
   n: KhanAcademyNotification,
 ): n is ProgramFeedbackNotification {
   return n.__typename === 'ProgramFeedbackNotification';
 }
-
 function isAvatarNotification(n: KhanAcademyNotification): n is AvatarNotification {
   return n.__typename === 'AvatarNotification';
 }
-
 function isGroupedBadgeNotification(n: KhanAcademyNotification): n is GroupedBadgeNotification {
   return n.__typename === 'GroupedBadgeNotification';
 }
-
 function isBadgeNotification(n: KhanAcademyNotification): n is BadgeNotification {
   return n.__typename === 'BadgeNotification';
 }
-
-function isModerationNotification(n: KhanAcademyNotification): n is ModerationNotification {
-  return n.__typename === 'ModerationNotification';
+function isModerationNotification(n: KhanAcademyNotification): n is ModeratorNotification {
+  return n.__typename === 'ModeratorNotification';
 }
-
 function isInfoNotification(n: KhanAcademyNotification): n is InfoNotification {
   return n.__typename === 'InfoNotification';
 }
-
 function isThreadCreatedNotification(n: KhanAcademyNotification): n is ThreadCreatedNotification {
   return n.__typename === 'ThreadCreatedNotification';
 }
-
 function isAssignmentCreatedNotification(
   n: KhanAcademyNotification,
 ): n is AssignmentCreatedNotification {
   return n.__typename === 'AssignmentCreatedNotification';
 }
-
 function isAssignmentDueDateNotification(
   n: KhanAcademyNotification,
 ): n is AssignmentDueDateNotification {
   return n.__typename === 'AssignmentDueDateNotification';
 }
-
 function isCourseMasteryGoalCreatedNotification(
   n: KhanAcademyNotification,
 ): n is CourseMasteryGoalCreatedNotification {
   return n.__typename === 'CourseMasteryGoalCreatedNotification';
 }
-
 function isCoachRequestNotification(n: KhanAcademyNotification): n is CoachRequestNotification {
   return n.__typename === 'CoachRequestNotification';
 }
-
 function isCoachRequestAcceptedNotification(
   n: KhanAcademyNotification,
 ): n is CoachRequestAcceptedNotification {
   return n.__typename === 'CoachRequestAcceptedNotification';
 }
-
 function isUnitMasteryGoalCreatedNotification(
   n: KhanAcademyNotification,
 ): n is UnitMasteryGoalCreatedNotification {
   return n.__typename === 'UnitMasteryGoalCreatedNotification';
 }
-
 function isUnitMasteryDueDateCreatedNotification(
   n: KhanAcademyNotification,
 ): n is UnitMasteryDueDateCreatedNotification {
   return n.__typename === 'UnitMasteryDueDateCreatedNotification';
 }
-
 function isCourseMasteryDueDateCreatedNotification(
   n: KhanAcademyNotification,
 ): n is CourseMasteryDueDateCreatedNotification {
   return n.__typename === 'CourseMasteryDueDateCreatedNotification';
 }
-
 function isMasteryGoalDueDateApproachingCreatedNotification(
   n: KhanAcademyNotification,
 ): n is MasteryGoalDueDateApproachingCreatedNotification {

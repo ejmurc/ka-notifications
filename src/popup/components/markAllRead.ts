@@ -1,9 +1,8 @@
 import { getAuthToken } from '../../lib/api/auth';
 import { clearBrandNewNotifications } from '../../lib/api/notifications';
-import { StorageManager } from '../../lib/storage';
 
 export function setupMarkAllRead(): void {
-  const markAllRead = document.getElementById('mark-all-read');
+  const markAllRead = document.getElementById('mark-all-read') as HTMLButtonElement | null;
   if (!markAllRead || markAllRead.disabled) return;
   markAllRead.addEventListener('click', async () => {
     markAllRead.disabled = true;

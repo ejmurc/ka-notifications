@@ -3,10 +3,10 @@
   "name": "Khan Academy Notifications",
   "short_name": "KA Notifications",
   "author": "Elias Murcray",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "minimum_chrome_version": "109",
   "homepage_url": "https://github.com/eliasmurcray/ka-notifications",
-  "description": "Improve your Khan Academy workflow with various UI/UX improvements.",
+  "description": "Thoughtful enhancements for the Khan Academy experience.",
   "icons": {
     "16": "16.png",
     "32": "32.png",
@@ -30,7 +30,7 @@
       "run_at": "document_end"
     }
   ],
-  "permissions": ["cookies", "storage", "alarms"],
+  "permissions": ["cookies", "storage", "alarms", "unlimitedStorage"],
   "host_permissions": ["https://www.khanacademy.org/"],
   "web_accessible_resources": [
     {

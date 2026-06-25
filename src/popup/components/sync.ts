@@ -45,7 +45,7 @@ async function syncNotifications(store: Store<StorageData>): Promise<void> {
 
       const batch = response.notifications;
       notifications.push(...batch);
-      after = response.after;
+      after = response.after ?? '';
       if (!response.after || batch.some(n => !n.brandNew)) break;
     } catch (error) {
       if (!isNetworkError(error)) console.error('[syncNotifications]', error);

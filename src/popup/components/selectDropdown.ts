@@ -12,14 +12,14 @@ export function setupSelectDropdown(
     if (valueEl) valueEl.textContent = '';
     const items = menu!.querySelectorAll<HTMLButtonElement>('.dropdown-item');
     for (const item of items) {
-      const selected = item.dataset.value === newValue;
+      const selected = item.dataset['value'] === newValue;
       item.classList.toggle('selected', selected);
       if (selected && valueEl) valueEl.textContent = item.textContent!.trim();
     }
   }
 
-  if (trigger.dataset.initialized) return setValue;
-  trigger.dataset.initialized = 'true';
+  if (trigger.dataset['initialized']) return setValue;
+  trigger.dataset['initialized'] = 'true';
 
   function openMenu(): void {
     const triggerRect = trigger.getBoundingClientRect();
@@ -73,7 +73,7 @@ export function setupSelectDropdown(
   menu.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-value]');
     if (!btn) return;
-    const newValue = btn.dataset.value!;
+    const newValue = btn.dataset['value']!;
     setValue(newValue);
     menu!.classList.add('hidden');
     trigger.classList.remove('active');

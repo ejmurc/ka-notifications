@@ -17,16 +17,16 @@ export async function handleCookieChange({
     if (removed) {
       await StorageManager.remove([
         'authenticated',
+        'avatarSrc',
         'notifications',
         'notificationCursor',
         'nickname',
         'username',
         'points',
-        'avatarSrc',
         'profileLoaded',
       ]);
     } else {
-      await StorageManager.remove(['cursor', 'notifications']);
+      await StorageManager.remove(['notificationCursor', 'notifications']);
       await Promise.all([
         StorageManager.set('authenticated', true),
         syncNotifications(),

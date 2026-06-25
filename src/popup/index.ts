@@ -1,6 +1,6 @@
+// @ts-ignore
 import './index.css';
 
-import { getNotificationsForUser } from '../lib/api/notifications';
 import { createAppStore } from '../lib/store';
 import { renderAvatar } from './components/avatar';
 import { renderUnauthenticated } from './components/unauthenticated';
@@ -19,8 +19,6 @@ import { setupThemeSelect } from './components/themeSelect';
 import { onThemeChanged } from './theme';
 import { StorageManager } from '../lib/storage';
 import type { StorageData } from '../types/extension';
-import { createNotificationString } from './notification-builder';
-import { addReplyButtonEventListeners } from './reply-handler';
 
 async function main() {
   const store = await createAppStore();
@@ -44,6 +42,7 @@ async function main() {
     ['subtitle', 'points', 'badgeCounts', 'streak'],
     ({ points, badgeCounts, subtitle, streak }) => {
       const el = document.getElementById('subtext');
+      if (!el) return;
       switch (subtitle) {
         case 'badges':
           el.innerHTML = `<img class="badge" src="https://cdn.kastatic.org/khanacademy/images/9cd8eb34517f0b63-master-challenge-blue-small.png">${badgeCounts[5]}<img class="badge" src="https://cdn.kastatic.org/khanacademy/images/82110aa4c173fbfd-eclipse-small.png">${badgeCounts[4]}<img class="badge" src="https://cdn.kastatic.org/khanacademy/images/ef5234d92d438910-sun-small.png">${badgeCounts[3]}<img class="badge" src="https://cdn.kastatic.org/khanacademy/images/998a03825ec956fa-earth-small.png">${badgeCounts[2]}<img class="badge" src="https://cdn.kastatic.org/khanacademy/images/101dded2e8338832-moon-small.png">${badgeCounts[1]}<img class="badge" src='https://cdn.kastatic.org/khanacademy/images/86fb03a065d69d3c-meteorite-small.png'>${badgeCounts[0]}`;
@@ -60,7 +59,7 @@ async function main() {
     },
   );
   store.subscribe(['username'], ({ username }) => {
-    const el = document.getElementById('profile-link');
+    const el = document.getElementById('profile-link') as HTMLAnchorElement | null;
     if (el) {
       el.href = 'https://khanacademy.org/profile/' + username;
     }
@@ -76,7 +75,7 @@ async function main() {
   setupSwitches();
   setupSync(store);
   setupSignoutDropdown();
-  setupTheme(store);
+  setupTheme();
   setupMarkAllRead();
   setupNotificationsList(store);
   setupFontFamily(store);

@@ -1,8 +1,9 @@
 import { StorageData } from '../../types/extension';
 import { KHAN_AVATAR_BASE_URL } from '../../lib/constants';
 
-type avatarKeys = Pick<StorageData, 'avatarSrc', 'nickname'>;
-export function renderAvatar({ nickname, avatarSrc }: avatarKeys): void {
+type AvatarKeys = Pick<StorageData, 'avatarSrc' | 'nickname'>;
+
+export function renderAvatar({ nickname, avatarSrc }: AvatarKeys): void {
   const container = document.getElementById('avatar-container');
   if (!container) return;
   const src = KHAN_AVATAR_BASE_URL + avatarSrc;
