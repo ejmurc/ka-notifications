@@ -35,19 +35,19 @@ export async function setupNotificationsList(store: AppStore) {
 
   const { notifications, notificationCursor } = await new Promise<ResolveValue>(resolve => {
     const unsubscribe = store.subscribe(
-      ['notifications', 'notificationCursor'],
-      (values: ResolveValue) => {
-        if (values.notificationCursor) {
+      ['notifications', 'notificationCursor', 'notificationsLoaded'],
+      values => {
+        if (values.notificationsLoaded) {
           unsubscribe();
           resolve(values);
         }
       },
       { immediate: false },
     );
-    const current = store.get();
-    if (current.notificationCursor) {
+    const values = store.get();
+    if (values.notificationsLoaded) {
       unsubscribe();
-      resolve(current as ResolveValue);
+      resolve(values);
     }
   });
 

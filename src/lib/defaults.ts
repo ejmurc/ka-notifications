@@ -6,6 +6,7 @@ export const defaults: StorageData = {
   avatarSrc: '',
   notifications: [],
   notificationCursor: '',
+  notificationsLoaded: false,
   darkTheme: false,
   editorSettings: {
     fontFamily: 'default',

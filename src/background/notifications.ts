@@ -12,6 +12,7 @@ export async function syncNotifications(): Promise<void> {
       StorageManager.set('authenticated', false),
       StorageManager.set('notifications', []),
       StorageManager.set('notificationCursor', ''),
+      StorageManager.set('notificationsLoaded', false),
     ]);
     return;
   }
@@ -49,5 +50,6 @@ export async function syncNotifications(): Promise<void> {
     chrome.action.setBadgeText({ text: badgeText }),
     StorageManager.set('notifications', notifications),
     StorageManager.set('notificationCursor', after),
+    StorageManager.set('notificationsLoaded', true),
   ]);
 }

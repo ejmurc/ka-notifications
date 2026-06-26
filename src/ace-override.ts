@@ -192,6 +192,10 @@ function waitForEditor(): Promise<void> {
       const originalEdit = editFn.bind(_ace);
       _ace.edit = function (el) {
         _ace.edit = originalEdit;
+        (_ace as unknown as AceConfig).config.set(
+          'themePath',
+          'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
+        );
         editor =
           typeof el === 'string' ? originalEdit(el as string) : originalEdit(el as HTMLElement);
         resolve();
@@ -229,17 +233,23 @@ function waitForEditor(): Promise<void> {
   });
 }
 
+let aceInitialized = false;
+
 async function onAceSet(): Promise<void> {
+  if (aceInitialized) return;
+  aceInitialized = true;
+
   const currentHref = window.location.href;
 
-  const editorPromise = waitForEditor();
-  const settingsPromise = fetchExtensionSettings();
-  await Promise.all([cacheDOMReferences(), settingsPromise, editorPromise]);
+  await waitForEditor();
 
   (_ace as unknown as AceConfig).config.set(
     'themePath',
     'https://cdn.jsdelivr.net/npm/ace-builds@latest/src-min-noconflict/',
   );
+
+  const settingsPromise = fetchExtensionSettings();
+  await Promise.all([cacheDOMReferences(), settingsPromise]);
 
   await updateEditorSettings();
 
@@ -298,14 +308,20 @@ async function onAceSet(): Promise<void> {
       }
 
       const target = e.target as HTMLElement;
-      if (
-        target.textContent?.trim() === 'Save' &&
-        !!target.closest('.modal, .dialog, .popup, [role="dialog"]')
-      ) {
+      const inDialog = !!target.closest(
+        '[role="dialog"], [role="alertdialog"], [aria-modal="true"], .modal, .dialog, .popup',
+      );
+      const isSaveButton =
+        target.textContent?.trim().toLowerCase() === 'save' ||
+        !!target.closest('[data-test-id*="save"]');
+      if (isSaveButton && inDialog) {
         window.removeEventListener('beforeunload', saveProgram);
         document.body.removeEventListener('mouseup', handleSaveClick);
+        editor.selection.off('changeCursor', saveProgram);
+        editor.off('change', saveProgram);
         saveBeforeUnload = false;
         localStorage.removeItem(cacheName);
+        console.log(localStorage, cacheName);
       }
     }
 
@@ -321,10 +337,12 @@ if (!descriptor || descriptor.configurable) {
 }
 
 Object.defineProperty(window, 'ace', {
+  configurable: true,
   get() {
     return _ace;
   },
   set(value: Ace) {
+    if (!value) return;
     _ace = value;
     onAceSet();
   },

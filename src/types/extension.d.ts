@@ -28,7 +28,8 @@ export type StorageData = {
   authenticated: boolean;
   avatarSrc: string;
   notifications: KhanAcademyNotification[];
-  notificationCursor: string;
+  notificationCursor: string | null;
+  notificationsLoaded: boolean;
   darkTheme: boolean;
   editorSettings: EditorSettings;
   commentSort: string;

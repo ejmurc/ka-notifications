@@ -15,6 +15,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
       'avatarSrc',
       'notifications',
       'notificationCursor',
+      'notificationsLoaded',
       'nickname',
       'username',
       'points',
