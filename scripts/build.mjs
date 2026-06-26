@@ -35,7 +35,7 @@ const config = {
   },
   outdir: 'chrome',
   bundle: true,
-  format: 'esm',
+  format: 'iife',
   minify: isProd,
   sourcemap: !isProd,
   target: ['es2020'],
