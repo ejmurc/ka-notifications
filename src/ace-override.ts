@@ -50,6 +50,7 @@ let _ace: Ace;
 let settings: EditorSettings;
 let state = createEditorState();
 let currentURL = window.location.href;
+let editorObserver: MutationObserver | null = null;
 
 let boundSaveProgram: (() => void) | null = null;
 let boundHandleSaveClick: ((e: MouseEvent) => void) | null = null;
@@ -68,9 +69,27 @@ function teardown(): void {
     document.body.removeEventListener('mouseup', boundHandleSaveClick);
   }
   state.slimCursorStyle?.remove();
+  editorObserver?.disconnect();
+  editorObserver = null;
   boundSaveProgram = null;
   boundHandleSaveClick = null;
   state = createEditorState();
+}
+
+function observeEditorMount(): void {
+  if (editorObserver) return;
+  editorObserver = new MutationObserver(() => {
+    const el = document.querySelector('.ace_editor');
+    if (!el || !_ace || state.initialized) return;
+    const existing = (el as HTMLElement & { env?: { editor?: AceAjax.Editor } })?.env?.editor;
+    if (!existing) return;
+    state.editor = existing;
+    state.initialized = true;
+    editorObserver?.disconnect();
+    editorObserver = null;
+    initializeEditor(window.location.href);
+  });
+  editorObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function onURLChange(): void {
@@ -78,6 +97,7 @@ function onURLChange(): void {
   if (newURL !== currentURL) {
     currentURL = newURL;
     teardown();
+    observeEditorMount();
   }
 }
 
@@ -370,15 +390,17 @@ function attachNewProgramListeners(cacheName: string): void {
   document.body.addEventListener('mouseup', boundHandleSaveClick);
 }
 
-async function initializeEditor(currentHref: string): Promise<void> {
-  await waitForEditor();
+async function initializeEditor(href: string): Promise<void> {
+  if (!state.editor) {
+    await waitForEditor();
+  }
   (_ace as unknown as AceConfig).config.set('themePath', ACE_THEME_PATH);
   await Promise.all([cacheDOMReferences(), fetchExtensionSettings()]);
   await updateEditorSettings();
 
-  if (!isNewProgramURL(currentHref)) return;
+  if (!isNewProgramURL(href)) return;
 
-  const programType = currentHref.split('/')?.[5]?.toLowerCase();
+  const programType = href.split('/')?.[5]?.toLowerCase();
   if (!programType) {
     console.warn('[initializeEditor] Could not parse programType from href, bailing');
     return;
@@ -393,6 +415,8 @@ async function initializeEditor(currentHref: string): Promise<void> {
 async function onAceSet(): Promise<void> {
   if (state.initialized) return;
   state.initialized = true;
+  editorObserver?.disconnect();
+  editorObserver = null;
   await initializeEditor(window.location.href);
 }
 
