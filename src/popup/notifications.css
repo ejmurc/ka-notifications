@@ -80,6 +80,7 @@
   line-height: 1;
   flex-shrink: 0;
   margin-right: 0.5rem;
+  text-decoration: none;
 }
 
 .notification-link {

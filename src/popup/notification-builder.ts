@@ -39,6 +39,7 @@ function baseWrapper(notification: BaseNotification, header: string, content: st
 function headerTemplate(
   iconSrc: string,
   nickname: string,
+  nicknameUrl: string | null,
   link: string | null,
   linkText: string | null,
   date: string,
@@ -47,11 +48,29 @@ function headerTemplate(
   return `
     <div class="notification-header">
       <img class="notification-avatar" src="${iconSrc}">
-      <h3 class="notification-nickname">${escapeHtml(nickname)}</h3>
+      ${nicknameUrl ? `<a class="notification-nickname" href=${nicknameUrl} target="_blank">${escapeHtml(nickname)}</a>` : `<h3 class="notification-nickname">${escapeHtml(nickname)}</h3>`}
       ${link ? `<a class="notification-link" href="https://www.khanacademy.org${link}" target="_blank">${linkText}</a>` : ''}
       ${flags?.flagged ? `<span class="notification-flag" title="This content was flagged">⚑ Flagged</span>` : ''}
       <span class="notification-date">${timeSince(new Date(date))} ago</span>
     </div>`;
+}
+
+function extractKaid(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const matchKey = url.match(/[?&]qa_expand_key=([^&]+)/);
+    if (!matchKey) return null;
+    let key = decodeURIComponent(matchKey[1]);
+    let base64 = key.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    const decoded = atob(base64);
+    const kaidMatch = decoded.match(/kaid_\d+/);
+    return kaidMatch ? kaidMatch[0] : null;
+  } catch {
+    return null;
+  }
 }
 
 function buildResponseFeedback(n: ResponseFeedbackNotification): string {
@@ -63,9 +82,11 @@ function buildResponseFeedback(n: ResponseFeedbackNotification): string {
         : n.feedbackType === 'QUESTION'
           ? 'asked a question'
           : 'left feedback';
+  const kaid = extractKaid(n.url);
   const header = headerTemplate(
     resolveIcon(n.authorAvatarUrl),
     n.authorNickname,
+    kaid ? `https://www.khanacademy.org/profile/${kaid}` : null,
     n.url,
     n.focusTranslatedTitle ? `${actionText} on ${escapeHtml(n.focusTranslatedTitle)}` : actionText,
     n.date,
@@ -82,9 +103,11 @@ function buildResponseFeedback(n: ResponseFeedbackNotification): string {
 
 function buildProgramFeedback(n: ProgramFeedbackNotification): string {
   const actionText = n.feedbackType === 'COMMENT' ? 'commented' : 'asked a question';
+  const kaid = extractKaid(n.url);
   const header = headerTemplate(
     resolveIcon(n.authorAvatarSrc),
     n.authorNickname,
+    kaid ? `https://www.khanacademy.org/profile/${kaid}` : null,
     n.url,
     `${actionText} on ${escapeHtml(n.translatedScratchpadTitle)}`,
     n.date,
@@ -106,6 +129,7 @@ function buildAvatar(n: AvatarNotification): string {
       ? n.thumbnailSrc
       : 'https://cdn.kastatic.org' + n.thumbnailSrc,
     'KA Avatars',
+    null,
     n.url,
     'use avatar',
     n.date,
@@ -116,7 +140,7 @@ function buildAvatar(n: AvatarNotification): string {
 
 function buildGroupedBadge(n: GroupedBadgeNotification): string {
   const icon = resolveIcon(n.badgeNotifications?.badge?.icons?.compactUrl);
-  const header = headerTemplate(icon, 'KA Badges', n.url, 'view badges', n.date);
+  const header = headerTemplate(icon, 'KA Badges', null, n.url, 'view badges', n.date);
   const descriptions = [n.badgeNotifications?.badge?.description].filter(Boolean) as string[];
   const content = `<p class="notification-content">You earned ${formatBadgeList(descriptions)}. Congratulations!</p>`;
   return baseWrapper(n, header, content);
@@ -124,19 +148,19 @@ function buildGroupedBadge(n: GroupedBadgeNotification): string {
 
 function buildBadge(n: BadgeNotification): string {
   const icon = resolveIcon(n.badge?.icons?.compactUrl);
-  const header = headerTemplate(icon, 'KA Badges', n.url, 'view badge', n.date);
+  const header = headerTemplate(icon, 'KA Badges', null, n.url, 'view badge', n.date);
   const content = `<p class="notification-content">You earned <b>${n.badge.description}</b>! <i>${n.badge.fullDescription}</i></p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildModeration(n: ModeratorNotification): string {
-  const header = headerTemplate('guardian.png', 'KA Guardian', null, null, n.date);
+  const header = headerTemplate('guardian.png', 'KA Guardian', null, null, null, n.date);
   const content = `<p class="notification-content">${parseMarkdown(n.text)}</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildInfo(n: InfoNotification): string {
-  const header = headerTemplate(resolveIcon(), 'KA Info', null, null, n.date);
+  const header = headerTemplate(resolveIcon(), 'KA Info', null, null, null, n.date);
   const content = `<p class="notification-content">${n.notificationType}</p>`;
   return baseWrapper(n, header, content);
 }
@@ -144,7 +168,7 @@ function buildInfo(n: InfoNotification): string {
 function buildThreadCreated(n: ThreadCreatedNotification): string {
   const nickname = n.coachee?.nickname ?? '';
   const actor = n.coachee ? escapeHtml(nickname) : 'Someone';
-  const header = headerTemplate(resolveIcon(), nickname, n.url, 'view thread', n.date, {
+  const header = headerTemplate(resolveIcon(), nickname, null, n.url, 'view thread', n.date, {
     flagged: n.flagged,
   });
   const content = `<p class="notification-content">${actor} started a new discussion thread.</p>`;
@@ -155,6 +179,7 @@ function buildAssignmentCreated(n: AssignmentCreatedNotification): string {
   const header = headerTemplate(
     resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Assignments',
+    null,
     n.url,
     'view assignment',
     n.date,
@@ -167,6 +192,7 @@ function buildAssignmentDueDate(n: AssignmentDueDateNotification): string {
   const header = headerTemplate(
     resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Assignments',
+    null,
     n.url,
     'view details',
     n.date,
@@ -179,6 +205,7 @@ function buildCourseMasteryGoalCreated(n: CourseMasteryGoalCreatedNotification):
   const header = headerTemplate(
     resolveIcon(n.curationNodeIconURL) || resolveIcon(),
     'Mastery Goals',
+    null,
     n.url,
     'view goal',
     n.date,
@@ -188,14 +215,21 @@ function buildCourseMasteryGoalCreated(n: CourseMasteryGoalCreatedNotification):
 }
 
 function buildCoachRequest(n: CoachRequestNotification): string {
-  const header = headerTemplate(resolveIcon(), n.coach.nickname, n.url, 'view request', n.date);
+  const header = headerTemplate(
+    resolveIcon(),
+    n.coach.nickname,
+    null,
+    n.url,
+    'view request',
+    n.date,
+  );
   const content = `<p class="notification-content">${n.coachIsParent ? 'A parent' : 'A coach'} requested to coach you.</p>`;
   return baseWrapper(n, header, content);
 }
 
 function buildCoachRequestAccepted(n: CoachRequestAcceptedNotification): string {
   const icon = resolveIcon(n.classroom?.topics?.iconUrl);
-  const header = headerTemplate(icon, 'Coaching', n.url, 'view details', n.date);
+  const header = headerTemplate(icon, 'Coaching', null, n.url, 'view details', n.date);
   const studentName = n.student?.nickname ?? n.student?.email ?? 'a student';
   const className = n.classroom?.name;
   const content = `<p class="notification-content">Coach request accepted by <b>${escapeHtml(studentName)}</b>.
@@ -209,7 +243,7 @@ function buildCoachRequestAccepted(n: CoachRequestAcceptedNotification): string 
 function buildUnitMasteryGoalCreated(n: UnitMasteryGoalCreatedNotification): string {
   const icon = resolveIcon(n.unit?.iconUrl ?? n.unit?.parent?.iconUrl);
   const coachName = n.classroomInfo?.coach?.nickname ?? 'Your coach';
-  const header = headerTemplate(icon, 'Mastery Goal', n.url, 'view goal', n.date);
+  const header = headerTemplate(icon, 'Mastery Goal', null, n.url, 'view goal', n.date);
   const content = `<p class="notification-content">${coachName} created a mastery goal for ${n.numAssignmentsCount} assignment(s).</p>`;
   return baseWrapper(n, header, content);
 }
@@ -225,7 +259,7 @@ function buildMasteryDueDateCreated(
   const topicName = isUnit
     ? (n as UnitMasteryDueDateCreatedNotification).unit?.translatedStandaloneTitle
     : (n as CourseMasteryDueDateCreatedNotification).course?.translatedStandaloneTitle;
-  const header = headerTemplate(icon, `${label} Due Date`, n.url, 'view details', n.date);
+  const header = headerTemplate(icon, `${label} Due Date`, null, n.url, 'view details', n.date);
   const content = `<p class="notification-content"><b>${escapeHtml(topicName ?? '')}</b> ${label.toLowerCase()} goal due <b>${new Date(n.dueDate).toLocaleDateString()}</b>.</p>`;
   return baseWrapper(n, header, content);
 }
@@ -233,7 +267,7 @@ function buildMasteryDueDateCreated(
 function buildMasteryGoalDueDateApproaching(
   n: MasteryGoalDueDateApproachingCreatedNotification,
 ): string {
-  const header = headerTemplate(resolveIcon(), 'Mastery Goal', n.url, 'view goal', n.date);
+  const header = headerTemplate(resolveIcon(), 'Mastery Goal', null, n.url, 'view goal', n.date);
   const content = `<p class="notification-content">Your mastery goal due date is approaching!</p>
   <div class="notification-actions">
       <a class="notification-btn" href="https://www.khanacademy.org${n.url}" target="_blank">View Goal</a>
@@ -264,7 +298,7 @@ export function createNotificationString(n: KhanAcademyNotification): string {
   console.warn(`Unsupported notification type: ${unknownNotification.__typename}`);
   return baseWrapper(
     unknownNotification,
-    headerTemplate(resolveIcon(), 'Unknown', null, null, unknownNotification.date),
+    headerTemplate(resolveIcon(), 'Unknown', null, null, null, unknownNotification.date),
     `<pre>${JSON.stringify(unknownNotification, null, 2)}</pre>`,
   );
 }

@@ -27,6 +27,8 @@ export async function syncNotifications(): Promise<void> {
       const response = await getNotificationsForUser(after);
       if (!response) break;
 
+      console.log(response.notifications);
+
       const batch: KhanAcademyNotification[] = response.notifications;
       notifications.push(...batch);
 
