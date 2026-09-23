@@ -55,12 +55,14 @@ function headerTemplate(
     </div>`;
 }
 
-function extractKaid(url) {
-  if (!url || typeof url !== 'string') return null;
+function extractKaid(url?: string) {
+  if (!url) return null;
   try {
     const matchKey = url.match(/[?&]qa_expand_key=([^&]+)/);
     if (!matchKey) return null;
-    let key = decodeURIComponent(matchKey[1]);
+    const encodedKey = matchKey[1];
+    if (!encodedKey) return null;
+    const key = decodeURIComponent(encodedKey);
     let base64 = key.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4 !== 0) {
       base64 += '=';
